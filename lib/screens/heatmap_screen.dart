@@ -79,6 +79,52 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     await _loadHeatmapData();
   }
 
+  Future<void> _backfillDay(DateTime cellDate) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark day as completed?'),
+        content: Text('Toggle completion for ${_formatDate(cellDate)}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final prefs = await SharedPreferences.getInstance();
+      final dateStr = _formatDate(cellDate);
+      final habits = ref.read(habitListProvider);
+      
+      bool hasAnyCompleted = false;
+      for (final habit in habits) {
+        final key = 'habit_log_${habit.id}_$dateStr';
+        if (prefs.getBool(key) == true) {
+          hasAnyCompleted = true;
+          break;
+        }
+      }
+      
+      for (final habit in habits) {
+        final key = 'habit_log_${habit.id}_$dateStr';
+        if (hasAnyCompleted) {
+          await prefs.remove(key);
+        } else {
+          await prefs.setBool(key, true);
+        }
+      }
+      
+      await _loadHeatmapData();
+    }
+  }
+
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
@@ -183,7 +229,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                     );
                     return isToday
                         ? GestureDetector(onTap: () => _toggleToday(day.date), child: cell)
-                        : cell;
+                        : GestureDetector(onLongPress: () => _backfillDay(day.date), child: cell);
                   }),
                 ),
               );
@@ -253,7 +299,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       padding: EdgeInsets.only(right: w == weeks - 1 ? 0 : gap),
                       child: isToday
                           ? GestureDetector(onTap: () => _toggleToday(day.date), child: cell)
-                          : cell,
+                            : GestureDetector(onLongPress: () => _backfillDay(day.date), child: cell),
                     );
                   }),
                 ),
