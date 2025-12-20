@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.3.0
   shared_preferences: ^2.2.0
+  http: ^0.13.6
+  flutter_secure_storage: ^9.0.0
 
 dev_dependencies:
   flutter_test:
