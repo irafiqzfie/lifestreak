@@ -88,6 +88,28 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
+  int _calculateCurrentStreak(List<HeatmapDay> heatmapDays) {
+    final sortedDays = heatmapDays.toList()..sort((a, b) => b.date.compareTo(a.date));
+    int streak = 0;
+    final today = DateTime.now();
+    final todayNormalized = DateTime(today.year, today.month, today.day);
+    
+    for (final day in sortedDays) {
+      final dayNormalized = DateTime(day.date.year, day.date.month, day.date.day);
+      final expectedDate = todayNormalized.subtract(Duration(days: streak));
+      
+      if (dayNormalized.isAtSameMomentAs(expectedDate)) {
+        if (day.intensity > 0) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    return streak;
+  }
+
   Color _colorForIntensity(int intensity, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -262,6 +284,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
     final habits = ref.watch(habitListProvider);
     final completedCount = todayData.intensity > 0 ? todayData.intensity : 0;
+    final currentStreak = _calculateCurrentStreak(heatmapDays);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Heatmap')),
@@ -302,26 +325,50 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _colorForIntensity(todayData.intensity, context),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            completedCount == habits.length && habits.isNotEmpty
-                                ? 'Perfect!'
-                                : completedCount > 0
-                                    ? 'In Progress'
-                                    : 'Not Started',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: todayData.intensity >= 2
-                                  ? Colors.white
-                                  : Theme.of(context).colorScheme.onSurface,
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Streak',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$currentStreak',
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: currentStreak > 0 ? Theme.of(context).colorScheme.primary : null,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: _colorForIntensity(todayData.intensity, context),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                completedCount == habits.length && habits.isNotEmpty
+                                    ? 'Perfect!'
+                                    : completedCount > 0
+                                        ? 'In Progress'
+                                        : 'Not Started',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: todayData.intensity >= 2
+                                      ? Colors.white
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
