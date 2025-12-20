@@ -14,8 +14,13 @@ void main() {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: HeatmapScreen()),
+        ProviderScope(
+          child: MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(800, 600)),
+              child: const HeatmapScreen(),
+            ),
+          ),
         ),
       );
       await tester.pump();

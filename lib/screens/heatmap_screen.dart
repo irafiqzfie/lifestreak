@@ -178,31 +178,34 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final availableWidth = constraints.maxWidth - labelWidth - 8.0;
     final cellSize = (availableWidth - (weeks - 1) * gap) / weeks;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: labelWidth,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: List.generate(days, (r) {
-              return SizedBox(
-                height: cellSize,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(dayLabels[r], style: Theme.of(context).textTheme.bodySmall),
-                ),
-              );
-            }),
+    return SingleChildScrollView(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: labelWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: List.generate(days, (r) {
+                return SizedBox(
+                  height: cellSize,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(dayLabels[r], style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                );
+              }),
+            ),
           ),
-        ),
 
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
 
-        SizedBox(
-          width: availableWidth,
-          child: Column(
-            children: List.generate(days, (r) {
+          SizedBox(
+            width: availableWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(days, (r) {
               return SizedBox(
                 height: cellSize,
                 child: Row(
@@ -237,6 +240,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           ),
         ),
       ],
+    ),
     );
   }
 
@@ -252,6 +256,13 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       );
     }
 
+    final todayData = heatmapDays.firstWhere(
+      (day) => _isToday(day.date),
+      orElse: () => HeatmapDay(date: DateTime.now(), intensity: 0),
+    );
+    final habits = ref.watch(habitListProvider);
+    final completedCount = todayData.intensity > 0 ? todayData.intensity : 0;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Heatmap')),
       body: Column(
@@ -264,6 +275,58 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Today',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$completedCount / ${habits.length}',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _colorForIntensity(todayData.intensity, context),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            completedCount == habits.length && habits.isNotEmpty
+                                ? 'Perfect!'
+                                : completedCount > 0
+                                    ? 'In Progress'
+                                    : 'Not Started',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: todayData.intensity >= 2
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   const Text('Last 90 days', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 12),
                   Expanded(
