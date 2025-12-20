@@ -14,10 +14,23 @@ class HeatmapScreen extends ConsumerStatefulWidget {
 
 class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   List<HeatmapDay>? _heatmapDays;
+  String _selectedRange = '90D';
 
-  static const int weeks = 13;
-  static const int days = 7;
-  static const int totalCells = 90;
+  int get _daysToShow {
+    if (_selectedRange == 'Month') {
+      final now = DateTime.now();
+      final firstDayOfMonth = DateTime(now.year, now.month, 1);
+      final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+      return lastDayOfMonth.difference(firstDayOfMonth).inDays + 1;
+    } else if (_selectedRange == 'Year') {
+      return 365;
+    }
+    return 90;
+  }
+
+  int get weeks => (_daysToShow / 7).ceil();
+  int get days => 7;
+  int get totalCells => _daysToShow;
 
   @override
   void initState() {
@@ -41,7 +54,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final habits = ref.read(habitListProvider);
     final result = computeHeatmapDays(
       today: DateTime.now(),
-      days: 90,
+      days: _daysToShow,
       habits: habits,
       habitLogs: habitLogs,
     );
@@ -114,6 +127,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     } else if (streakDiff > 0) {
       impactMessage = 'This will extend your streak to $newStreak days.';
     }
+    
+    if (!mounted) return;
     
     final confirmed = await showDialog<bool>(
       context: context,
@@ -458,7 +473,33 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Last 90 days', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedRange == 'Month'
+                            ? 'This month'
+                            : _selectedRange == 'Year'
+                                ? 'Last 365 days'
+                                : 'Last 90 days',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: '90D', label: Text('90D')),
+                          ButtonSegment(value: 'Month', label: Text('Month')),
+                          ButtonSegment(value: 'Year', label: Text('Year')),
+                        ],
+                        selected: {_selectedRange},
+                        onSelectionChanged: (Set<String> selection) {
+                          setState(() {
+                            _selectedRange = selection.first;
+                          });
+                          _loadHeatmapData();
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Expanded(
                     child: LayoutBuilder(builder: (context, constraints) {
