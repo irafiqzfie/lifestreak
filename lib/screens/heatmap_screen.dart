@@ -417,6 +417,16 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                                 height: 1.1,
                               ),
                             ),
+                            if (completedCount == habits.length && habits.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '✓ Perfect',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
