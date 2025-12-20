@@ -1,34 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/score_summary_header.dart';
+import '../logic/heatmap_logic.dart';
+import '../providers/habit_provider.dart';
 
-class HeatmapScreen extends StatelessWidget {
+class HeatmapScreen extends ConsumerStatefulWidget {
   const HeatmapScreen({super.key});
 
-  static const int weeks = 13; // columns
-  static const int days = 7; // rows (Mon-Sun)
+  @override
+  ConsumerState<HeatmapScreen> createState() => _HeatmapScreenState();
+}
+
+class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
+  List<HeatmapDay>? _heatmapDays;
+
+  static const int weeks = 13;
+  static const int days = 7;
   static const int totalCells = 90;
 
-  List<double> _mockPercentages() {
-    // Generate 90 mock percentage values between 0.0 and 1.0
-    final List<double> values = List.generate(
-      totalCells,
-      (i) => (i % 5) / 4.0, // cycles through 0.0,0.25,0.5,0.75,1.0
-    );
-    return values;
+  @override
+  void initState() {
+    super.initState();
+    _loadHeatmapData();
   }
 
-  Color _colorForPercentage(double p, BuildContext context) {
-    if (p <= 0.0) return Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(0xEE);
-    if (p <= 0.33) return Colors.green.shade200;
-    if (p <= 0.66) return Colors.green.shade400;
-    if (p < 1.0) return Colors.green.shade700;
-    return Colors.green.shade900;
+  Future<void> _loadHeatmapData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final habitLogs = <String, bool>{};
+    
+    for (final key in prefs.getKeys()) {
+      if (key.startsWith('habit_log_')) {
+        final value = prefs.getBool(key);
+        if (value != null) {
+          habitLogs[key] = value;
+        }
+      }
+    }
+
+    final habits = ref.read(habitListProvider);
+    final result = computeHeatmapDays(
+      today: DateTime.now(),
+      days: 90,
+      habits: habits,
+      habitLogs: habitLogs,
+    );
+
+    if (mounted) {
+      setState(() {
+        _heatmapDays = result;
+      });
+    }
+  }
+
+  Color _colorForIntensity(int intensity, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    if (intensity == 0) {
+      return isDark
+          ? Colors.grey.shade800
+          : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(0xEE);
+    }
+    if (intensity == 1) {
+      return isDark ? Colors.green.shade800 : Colors.green.shade200;
+    }
+    if (intensity == 2) {
+      return isDark ? Colors.green.shade600 : Colors.green.shade400;
+    }
+    return isDark ? Colors.green.shade400 : Colors.green.shade700;
   }
 
   @override
   Widget build(BuildContext context) {
-    final percentages = _mockPercentages();
+    final heatmapDays = _heatmapDays;
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    if (heatmapDays == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Heatmap')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Heatmap')),
@@ -86,14 +138,14 @@ class HeatmapScreen extends StatelessWidget {
                                       if (index >= totalCells) {
                                         return SizedBox(width: cellSize, height: cellSize);
                                       }
-                                      final p = percentages[index];
+                                      final intensity = heatmapDays[index].intensity;
                                       return Padding(
                                         padding: EdgeInsets.only(right: w == weeks - 1 ? 0 : gap),
                                         child: Container(
                                           width: cellSize,
                                           height: cellSize,
                                           decoration: BoxDecoration(
-                                            color: _colorForPercentage(p, context),
+                                            color: _colorForIntensity(intensity, context),
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                         ),
