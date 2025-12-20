@@ -144,6 +144,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 padding: const EdgeInsets.only(bottom: 6.0),
                 child: Row(
                   children: List.generate(7, (d) {
+                    if (d >= week.length) {
+                      return SizedBox(width: cellSize, height: cellSize);
+                    }
                     final day = week[d];
                     final intensity = day.intensity;
                     final isToday = _isToday(day.date);
