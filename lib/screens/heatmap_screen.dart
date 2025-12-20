@@ -228,9 +228,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildMobileTransposedGrid(BoxConstraints constraints, List<HeatmapDay> heatmapDays, List<String> dayLabels) {
     final padding = 32.0; // left+right
-    final gap = 6.0;
+    final gap = 4.0;
     final cellWidth = (constraints.maxWidth - padding - (7 - 1) * gap) / 7;
-    final cellSize = cellWidth < 44.0 ? 44.0 : cellWidth;
+    final cellSize = cellWidth < 40.0 ? 40.0 : cellWidth;
 
     final weeksList = <List<HeatmapDay>>[];
     for (int i = 0; i < totalCells; i += 7) {
@@ -295,7 +295,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildDesktopHorizontalGrid(BoxConstraints constraints, List<HeatmapDay> heatmapDays, List<String> dayLabels) {
     final labelWidth = 48.0;
-    final gap = 6.0;
+    final gap = _selectedRange == 'Year' ? 3.0 : 4.0;
     final availableWidth = constraints.maxWidth - labelWidth - 8.0;
     final cellSize = (availableWidth - (weeks - 1) * gap) / weeks;
 
@@ -397,82 +397,52 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Today',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               '$completedCount / ${habits.length}',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                height: 1.1,
                               ),
                             ),
                           ],
                         ),
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Streak',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$currentStreak',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: currentStreak > 0 ? Theme.of(context).colorScheme.primary : null,
-                                  ),
-                                ),
-                              ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Streak',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
                             ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: _colorForIntensity(todayData.intensity, context),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                completedCount == habits.length && habits.isNotEmpty
-                                    ? 'Perfect!'
-                                    : completedCount > 0
-                                        ? 'In Progress'
-                                        : 'Not Started',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: todayData.intensity >= 2
-                                      ? Colors.white
-                                      : Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$currentStreak',
+                            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                              color: currentStreak > 0 ? Theme.of(context).colorScheme.primary : null,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -482,7 +452,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                             : _selectedRange == 'Year'
                                 ? 'Last 365 days'
                                 : 'Last 90 days',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                        ),
                       ),
                       SegmentedButton<String>(
                         segments: const [
@@ -500,7 +472,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: LayoutBuilder(builder: (context, constraints) {
                       final isMobile = constraints.maxWidth < 600;
