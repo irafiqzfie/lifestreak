@@ -21,44 +21,42 @@ class ApiClient {
   final http.Client _httpClient;
 
   ApiClient({Uri? baseUrl, http.Client? httpClient})
-      : baseUrl = baseUrl ?? Uri.parse(_defaultBaseUrl),
-        _httpClient = httpClient ?? http.Client();
+    : baseUrl = baseUrl ?? Uri.parse(_defaultBaseUrl),
+      _httpClient = httpClient ?? http.Client();
 
   Future<String> requestMagicLink(String email) async {
-    final body = await _postJson(
-      '/auth/magic-link/request',
-      {'email': email},
-    );
+    final body = await _postJson('/auth/magic-link/request', {'email': email});
     return body['requestId'] as String? ?? '';
   }
 
   Future<Session> verifyMagicLink(String requestId, String code) async {
-    final body = await _postJson(
-      '/auth/magic-link/verify',
-      {'requestId': requestId, 'code': code},
-    );
+    final body = await _postJson('/auth/magic-link/verify', {
+      'requestId': requestId,
+      'code': code,
+    });
     return Session.fromJson(body);
   }
 
-  Future<void> syncHabitMetadata(List<Map<String, dynamic>> habits, {required String token}) async {
+  Future<void> syncHabitMetadata(
+    List<Map<String, dynamic>> habits, {
+    required String token,
+  }) async {
     if (habits.isEmpty) return;
-    await _postJson(
-      '/sync/habits',
-      {'habits': habits},
-      token: token,
-    );
+    await _postJson('/sync/habits', {'habits': habits}, token: token);
   }
 
-  Future<void> syncLogs(List<Map<String, dynamic>> logs, {required String token}) async {
+  Future<void> syncLogs(
+    List<Map<String, dynamic>> logs, {
+    required String token,
+  }) async {
     if (logs.isEmpty) return;
-    await _postJson(
-      '/sync/logs',
-      {'logs': logs},
-      token: token,
-    );
+    await _postJson('/sync/logs', {'logs': logs}, token: token);
   }
 
-  Future<List<Map<String, dynamic>>> fetchLogs({required String token, DateTime? since}) async {
+  Future<List<Map<String, dynamic>>> fetchLogs({
+    required String token,
+    DateTime? since,
+  }) async {
     final queryParameters = <String, String>{
       if (since != null) 'since': since.toIso8601String(),
     };
@@ -69,26 +67,42 @@ class ApiClient {
     );
     final data = response['logs'];
     if (data is List) {
-      return data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      return data
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
     }
     return [];
   }
 
-  Future<List<Map<String, dynamic>>> fetchFriendHeatmap(
-    String friendId, {
+  Future<List<Map<String, dynamic>>> fetchFriendSummaries({
     required String token,
-    String range = '90D',
   }) async {
-    final response = await _get(
-      '/friends/$friendId/heatmap',
-      token: token,
-      queryParameters: {'range': range},
-    );
-    final data = response['heatmap'];
+    final response = await _get('/friends/summaries', token: token);
+    final data = response['friends'];
     if (data is List) {
-      return data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      return data
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
     }
     return [];
+  }
+
+  Future<void> sendFriendRequest(String email, {required String token}) async {
+    await _postJson('/friends/request', {'email': email}, token: token);
+  }
+
+  Future<void> acceptFriendRequest(
+    String userId, {
+    required String token,
+  }) async {
+    await _postJson('/friends/accept', {'userId': userId}, token: token);
+  }
+
+  Future<void> rejectFriendRequest(
+    String userId, {
+    required String token,
+  }) async {
+    await _postJson('/friends/reject', {'userId': userId}, token: token);
   }
 
   Future<Map<String, dynamic>> _postJson(
@@ -114,17 +128,12 @@ class ApiClient {
     final uri = queryParameters == null || queryParameters.isEmpty
         ? base
         : base.replace(queryParameters: queryParameters);
-    final response = await _httpClient.get(
-      uri,
-      headers: _buildHeaders(token),
-    );
+    final response = await _httpClient.get(uri, headers: _buildHeaders(token));
     return _processResponse(response);
   }
 
   Map<String, String> _buildHeaders(String? token) {
-    final headers = <String, String>{
-      'content-type': 'application/json',
-    };
+    final headers = <String, String>{'content-type': 'application/json'};
     if (token != null && token.isNotEmpty) {
       headers['authorization'] = 'Bearer $token';
     }
@@ -134,12 +143,14 @@ class ApiClient {
   Map<String, dynamic> _processResponse(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
-        response.body.isNotEmpty ? response.body : 'Unexpected ${response.statusCode}',
+        response.body.isNotEmpty
+            ? response.body
+            : 'Unexpected ${response.statusCode}',
         statusCode: response.statusCode,
       );
     }
     if (response.body.isEmpty) {
-      return {}; 
+      return {};
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }

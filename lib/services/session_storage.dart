@@ -7,7 +7,8 @@ class SessionStorage {
 
   final FlutterSecureStorage _secureStorage;
 
-  const SessionStorage({FlutterSecureStorage? secureStorage}) : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  const SessionStorage({FlutterSecureStorage? secureStorage})
+    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   Future<Session?> read() async {
     final value = await _secureStorage.read(key: _sessionKey);
@@ -20,7 +21,10 @@ class SessionStorage {
   }
 
   Future<void> save(Session session) async {
-    await _secureStorage.write(key: _sessionKey, value: session.toStorageValue());
+    await _secureStorage.write(
+      key: _sessionKey,
+      value: session.toStorageValue(),
+    );
   }
 
   Future<void> clear() async {

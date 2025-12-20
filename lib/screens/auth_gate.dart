@@ -12,7 +12,8 @@ class AuthGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated && previous?.status != AuthStatus.authenticated) {
+      if (next.status == AuthStatus.authenticated &&
+          previous?.status != AuthStatus.authenticated) {
         ref.read(syncServiceProvider).syncHabitLogs();
       }
     });
@@ -20,9 +21,7 @@ class AuthGate extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     if (authState.status == AuthStatus.unknown) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (authState.status == AuthStatus.authenticated) {

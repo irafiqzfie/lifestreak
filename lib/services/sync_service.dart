@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/api_client.dart';
 import '../services/session_storage.dart';
+
+enum SyncStatus { idle, syncing, success, error }
 
 class SyncService {
   static const _logPrefix = 'habit_log_';
@@ -9,12 +12,18 @@ class SyncService {
 
   final ApiClient _apiClient;
   final SessionStorage _sessionStorage;
+  final ValueNotifier<SyncStatus> statusNotifier = ValueNotifier(
+    SyncStatus.idle,
+  );
+  String? lastError;
 
   SyncService(this._apiClient, this._sessionStorage);
 
   Future<void> syncHabitLogs() async {
     final session = await _sessionStorage.read();
     if (session == null) return;
+
+    statusNotifier.value = SyncStatus.syncing;
 
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
@@ -37,13 +46,24 @@ class SyncService {
       keysToMark.add(key);
     }
 
-    if (logs.isEmpty) return;
+    if (logs.isEmpty) {
+      statusNotifier.value = SyncStatus.idle;
+      return;
+    }
 
-    await _apiClient.syncLogs(logs, token: session.token);
-
-    final syncedAtValue = now.toIso8601String();
-    for (final key in keysToMark) {
-      await prefs.setString('$key$_syncedSuffix', syncedAtValue);
+    try {
+      await _apiClient.syncLogs(logs, token: session.token);
+      final syncedAtValue = now.toIso8601String();
+      for (final key in keysToMark) {
+        await prefs.setString('$key$_syncedSuffix', syncedAtValue);
+      }
+      statusNotifier.value = SyncStatus.success;
+      lastError = null;
+    } catch (error, stack) {
+      statusNotifier.value = SyncStatus.error;
+      lastError = error.toString();
+      debugPrint('SyncService failure: $error');
+      debugPrint(stack.toString());
     }
   }
 }

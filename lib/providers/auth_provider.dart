@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/session.dart';
 import '../services/api_client.dart';
+import '../services/friend_sync_service.dart';
 import '../services/session_storage.dart';
 
 enum AuthStatus { unknown, unauthenticated, requesting, authenticated }
@@ -39,15 +41,22 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
   final SessionStorage _sessionStorage;
+  final Ref _ref;
 
-  AuthNotifier(this._apiClient, this._sessionStorage) : super(AuthState.initial()) {
+  AuthNotifier(this._apiClient, this._sessionStorage, this._ref)
+    : super(AuthState.initial()) {
     _loadSession();
   }
 
   Future<void> _loadSession() async {
     final stored = await _sessionStorage.read();
     if (stored != null && stored.expiresAt.isAfter(DateTime.now())) {
-      state = state.copyWith(status: AuthStatus.authenticated, session: stored, message: null);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        session: stored,
+        message: null,
+      );
+      _syncFriends();
     } else {
       await _sessionStorage.clear();
       state = state.copyWith(
@@ -59,25 +68,61 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void _syncFriends() {
+    try {
+      final friendSyncService = _ref.read(friendSyncServiceProvider);
+      friendSyncService.syncFriendSummaries();
+    } catch (_) {
+      // Silent failure - friend sync is non-blocking
+    }
+  }
+
   Future<void> requestMagicLink(String email) async {
+    // Debug-only bypass for local testing (not compiled in release builds)
+    if (kDebugMode) {
+      state = state.copyWith(status: AuthStatus.requesting, message: null);
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      final fakeSession = Session(
+        userId: 'dev-user-${email.hashCode}',
+        username: email.split('@').first,
+        token: 'dev-token-${DateTime.now().millisecondsSinceEpoch}',
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      );
+
+      await _sessionStorage.save(fakeSession);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        session: fakeSession,
+        message: null,
+        pendingRequestId: null,
+      );
+      _syncFriends();
+      return;
+    }
+
+    // Production flow
     state = state.copyWith(status: AuthStatus.requesting, message: null);
     try {
       final requestId = await _apiClient.requestMagicLink(email);
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        message: 'Magic link sent (id: $requestId)',
+        message: null,
         pendingRequestId: requestId,
       );
     } catch (error) {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        message: error.toString(),
+        message: 'Unable to send code. Please check your connection.',
         pendingRequestId: null,
       );
     }
   }
 
   Future<void> verifyMagicLink(String requestId, String code) async {
+    if (state.status == AuthStatus.authenticated) {
+      return;
+    }
     state = state.copyWith(status: AuthStatus.requesting, message: null);
     try {
       final session = await _apiClient.verifyMagicLink(requestId, code);
@@ -88,8 +133,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         message: null,
         pendingRequestId: null,
       );
+      _syncFriends();
     } catch (error) {
-      state = state.copyWith(status: AuthStatus.unauthenticated, message: error.toString());
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        message: 'Code is invalid or expired. Please try again.',
+      );
     }
   }
 
@@ -105,7 +154,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
-final sessionStorageProvider = Provider<SessionStorage>((ref) => const SessionStorage());
+final sessionStorageProvider = Provider<SessionStorage>(
+  (ref) => const SessionStorage(),
+);
+
+final friendSyncServiceProvider = Provider<FriendSyncService>(
+  (ref) => FriendSyncService(
+    ref.read(apiClientProvider),
+    ref.read(sessionStorageProvider),
+  ),
+);
+
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.read(apiClientProvider), ref.read(sessionStorageProvider)),
+  (ref) => AuthNotifier(
+    ref.read(apiClientProvider),
+    ref.read(sessionStorageProvider),
+    ref,
+  ),
 );

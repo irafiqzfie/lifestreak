@@ -6,11 +6,7 @@ void main() {
   group('ScoreSummaryHeader', () {
     testWidgets('renders without crash', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ScoreSummaryHeader(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: ScoreSummaryHeader())),
       );
       await tester.pumpAndSettle();
 

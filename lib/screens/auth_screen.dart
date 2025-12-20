@@ -13,6 +13,7 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
+  String? _lastEmailSent;
 
   @override
   void dispose() {
@@ -24,7 +25,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void _requestLink() {
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
+    _lastEmailSent = email;
     ref.read(authProvider.notifier).requestMagicLink(email);
+  }
+
+  void _resendLink() {
+    if (_lastEmailSent != null) {
+      ref.read(authProvider.notifier).requestMagicLink(_lastEmailSent!);
+    }
   }
 
   void _verifyCode() {
@@ -52,60 +60,92 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isBusy)
-                const LinearProgressIndicator(),
-              Text(
-                'Sign in with your email to keep your streak data safe and synced across devices.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'you@example.com',
+              if (isBusy) const LinearProgressIndicator(),
+              if (!hasRequestId) ...[
+                Text(
+                  'Sign in with your email to keep your streak data safe and synced across devices.',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                enabled: !isBusy,
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isBusy ? null : _requestLink,
-                  child: const Text('Send magic link'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (hasRequestId) ...[
+                const SizedBox(height: 24),
                 TextField(
-                  controller: _codeController,
-                  keyboardType: TextInputType.number,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  autofillHints: const [AutofillHints.email],
                   decoration: const InputDecoration(
-                    labelText: 'Verification code',
-                    hintText: 'Enter code from your email',
+                    labelText: 'Email',
+                    hintText: 'you@example.com',
                   ),
                   enabled: !isBusy,
+                  onSubmitted: (_) => _requestLink(),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: FilledButton(
+                    onPressed: isBusy ? null : _requestLink,
+                    child: const Text('Send sign-in code'),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Check your email',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'We sent a verification code to ${_lastEmailSent ?? 'your email'}.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '• Check your spam/promotions folder\n• The code may take up to 30 seconds to arrive\n• Code expires in 10 minutes',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: _codeController,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Verification code',
+                    hintText: 'Enter 6-digit code',
+                  ),
+                  enabled: !isBusy,
+                  onSubmitted: (_) => _verifyCode(),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
                     onPressed: isBusy ? null : _verifyCode,
-                    child: const Text('Verify and continue'),
+                    child: const Text('Verify and sign in'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton(
+                    onPressed: isBusy ? null : _resendLink,
+                    child: const Text('Resend code'),
                   ),
                 ),
               ],
               const Spacer(),
               if (authState.message != null)
-                Text(
-                  authState.message!,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Theme.of(context).colorScheme.primary),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    authState.message!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
                 ),
             ],
           ),

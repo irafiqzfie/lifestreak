@@ -110,31 +110,37 @@ void main() {
       expect(notifier.state, isEmpty);
     });
 
-    test('_initialize loads habit_list JSON and creates Habit objects', () async {
-      SharedPreferences.setMockInitialValues({
-        'habit_list': '[{"id":"h1","name":"Morning stretch"}]',
-      });
-      final notifier = HabitListNotifier();
-      await Future.delayed(const Duration(milliseconds: 50));
+    test(
+      '_initialize loads habit_list JSON and creates Habit objects',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'habit_list': '[{"id":"h1","name":"Morning stretch"}]',
+        });
+        final notifier = HabitListNotifier();
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(notifier.state.length, 1);
-      expect(notifier.state[0].id, 'h1');
-      expect(notifier.state[0].name, 'Morning stretch');
-      expect(notifier.state[0].completed, false);
-    });
+        expect(notifier.state.length, 1);
+        expect(notifier.state[0].id, 'h1');
+        expect(notifier.state[0].name, 'Morning stretch');
+        expect(notifier.state[0].completed, false);
+      },
+    );
 
-    test('_initialize merges today\'s completions from habit_log keys', () async {
-      final today = _getTodayString();
-      SharedPreferences.setMockInitialValues({
-        'habit_list': '[{"id":"h1","name":"Morning stretch"}]',
-        'habit_log_h1_$today': true,
-      });
-      final notifier = HabitListNotifier();
-      await Future.delayed(const Duration(milliseconds: 50));
+    test(
+      '_initialize merges today\'s completions from habit_log keys',
+      () async {
+        final today = _getTodayString();
+        SharedPreferences.setMockInitialValues({
+          'habit_list': '[{"id":"h1","name":"Morning stretch"}]',
+          'habit_log_h1_$today': true,
+        });
+        final notifier = HabitListNotifier();
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(notifier.state.length, 1);
-      expect(notifier.state[0].completed, true);
-    });
+        expect(notifier.state.length, 1);
+        expect(notifier.state[0].completed, true);
+      },
+    );
   });
 }
 

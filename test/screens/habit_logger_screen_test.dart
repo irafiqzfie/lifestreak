@@ -14,9 +14,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: HabitLoggerScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: HabitLoggerScreen())),
       );
       await tester.pumpAndSettle();
 
@@ -29,9 +27,7 @@ void main() {
       });
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: HabitLoggerScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: HabitLoggerScreen())),
       );
       await tester.pumpAndSettle();
 
@@ -43,9 +39,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: HabitLoggerScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: HabitLoggerScreen())),
       );
       await tester.pumpAndSettle();
 
@@ -53,15 +47,16 @@ void main() {
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('renders without crash when habit list has items', (tester) async {
+    testWidgets('renders without crash when habit list has items', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({
-        'habit_list': '[{"id":"h1","name":"Habit 1"},{"id":"h2","name":"Habit 2"}]',
+        'habit_list':
+            '[{"id":"h1","name":"Habit 1"},{"id":"h2","name":"Habit 2"}]',
       });
 
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: HabitLoggerScreen()),
-        ),
+        const ProviderScope(child: MaterialApp(home: HabitLoggerScreen())),
       );
       await tester.pumpAndSettle();
 

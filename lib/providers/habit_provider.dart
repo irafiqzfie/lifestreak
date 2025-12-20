@@ -24,7 +24,7 @@ class Habit {
 
 class HabitListNotifier extends StateNotifier<List<Habit>> {
   SharedPreferences? _prefs;
-  
+
   HabitListNotifier() : super([]) {
     _initialize();
   }
@@ -40,12 +40,15 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
         // decode with dart:convert
         final decoded = _tryDecodeJsonList(habitJson);
         if (decoded != null) {
-          loaded = decoded.map((m) {
-            final id = m['id'] as String? ?? '';
-            final name = m['name'] as String? ?? '';
-            final completed = _prefs?.getBool(_storageKey(id, today)) ?? false;
-            return Habit(id: id, name: name, completed: completed);
-          }).toList(growable: false);
+          loaded = decoded
+              .map((m) {
+                final id = m['id'] as String? ?? '';
+                final name = m['name'] as String? ?? '';
+                final completed =
+                    _prefs?.getBool(_storageKey(id, today)) ?? false;
+                return Habit(id: id, name: name, completed: completed);
+              })
+              .toList(growable: false);
         }
       }
     } catch (_) {
@@ -67,7 +70,7 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
 
   void toggle(String id) {
     final today = _getTodayString();
-    
+
     state = state
         .map((h) {
           if (h.id == id) {
@@ -101,10 +104,7 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
   Future<void> _saveHabitList() async {
     if (_prefs == null) return;
     final simple = state
-        .map((h) => {
-              'id': h.id,
-              'name': h.name,
-            })
+        .map((h) => {'id': h.id, 'name': h.name})
         .toList(growable: false);
     try {
       final s = const JsonEncoder().convert(simple);
