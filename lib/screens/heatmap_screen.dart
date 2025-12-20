@@ -105,6 +105,138 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return isDark ? Colors.green.shade400 : Colors.green.shade700;
   }
 
+  Widget _buildMobileTransposedGrid(BoxConstraints constraints, List<HeatmapDay> heatmapDays, List<String> dayLabels) {
+    final padding = 32.0; // left+right
+    final gap = 6.0;
+    final cellWidth = (constraints.maxWidth - padding - (7 - 1) * gap) / 7;
+    final cellSize = cellWidth < 44.0 ? 44.0 : cellWidth;
+
+    final weeksList = <List<HeatmapDay>>[];
+    for (int i = 0; i < totalCells; i += 7) {
+      final end = (i + 7 <= totalCells) ? i + 7 : totalCells;
+      weeksList.add(heatmapDays.sublist(i, end));
+    }
+    final displayWeeks = weeksList.reversed.toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: cellSize,
+          child: Row(
+            children: List.generate(7, (i) {
+              return Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Text(dayLabels[i], style: Theme.of(context).textTheme.bodySmall),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.builder(
+            itemCount: displayWeeks.length,
+            itemBuilder: (ctx, wi) {
+              final week = displayWeeks[wi];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Row(
+                  children: List.generate(7, (d) {
+                    final day = week[d];
+                    final intensity = day.intensity;
+                    final isToday = _isToday(day.date);
+                    final cell = Container(
+                      width: cellSize,
+                      height: cellSize,
+                      margin: EdgeInsets.only(right: d == 6 ? 0 : gap),
+                      decoration: BoxDecoration(
+                        color: _colorForIntensity(intensity, context),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+                    return isToday
+                        ? GestureDetector(onTap: () => _toggleToday(day.date), child: cell)
+                        : cell;
+                  }),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopHorizontalGrid(BoxConstraints constraints, List<HeatmapDay> heatmapDays, List<String> dayLabels) {
+    final labelWidth = 48.0;
+    final gap = 6.0;
+    final availableWidth = constraints.maxWidth - labelWidth - 8.0;
+    final cellSize = (availableWidth - (weeks - 1) * gap) / weeks;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: labelWidth,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: List.generate(days, (r) {
+              return SizedBox(
+                height: cellSize,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(dayLabels[r], style: Theme.of(context).textTheme.bodySmall),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        SizedBox(
+          width: availableWidth,
+          child: Column(
+            children: List.generate(days, (r) {
+              return SizedBox(
+                height: cellSize,
+                child: Row(
+                  children: List.generate(weeks, (w) {
+                    final index = w * days + r;
+                    if (index >= totalCells) {
+                      return SizedBox(width: cellSize, height: cellSize);
+                    }
+                    final day = heatmapDays[index];
+                    final intensity = day.intensity;
+                    final isToday = _isToday(day.date);
+
+                    final cell = Container(
+                      width: cellSize,
+                      height: cellSize,
+                      decoration: BoxDecoration(
+                        color: _colorForIntensity(intensity, context),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+
+                    return Padding(
+                      padding: EdgeInsets.only(right: w == weeks - 1 ? 0 : gap),
+                      child: isToday
+                          ? GestureDetector(onTap: () => _toggleToday(day.date), child: cell)
+                          : cell,
+                    );
+                  }),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final heatmapDays = _heatmapDays;
@@ -133,76 +265,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                   const SizedBox(height: 12),
                   Expanded(
                     child: LayoutBuilder(builder: (context, constraints) {
-                      final labelWidth = 48.0;
-                      final gap = 6.0;
-                      final availableWidth = constraints.maxWidth - labelWidth - 8.0;
-                      final cellSize = (availableWidth - (weeks - 1) * gap) / weeks;
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Day labels column
-                          SizedBox(
-                            width: labelWidth,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: List.generate(days, (r) {
-                                return SizedBox(
-                                  height: cellSize,
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(dayLabels[r], style: Theme.of(context).textTheme.bodySmall),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-
-                          const SizedBox(width: 8),
-
-                          // Grid area
-                          SizedBox(
-                            width: availableWidth,
-                            child: Column(
-                              children: List.generate(days, (r) {
-                                return SizedBox(
-                                  height: cellSize,
-                                  child: Row(
-                                    children: List.generate(weeks, (w) {
-                                      final index = w * days + r;
-                                      if (index >= totalCells) {
-                                        return SizedBox(width: cellSize, height: cellSize);
-                                      }
-                                      final day = heatmapDays[index];
-                                      final intensity = day.intensity;
-                                      final isToday = _isToday(day.date);
-                                      
-                                      final cell = Container(
-                                        width: cellSize,
-                                        height: cellSize,
-                                        decoration: BoxDecoration(
-                                          color: _colorForIntensity(intensity, context),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                      );
-                                      
-                                      return Padding(
-                                        padding: EdgeInsets.only(right: w == weeks - 1 ? 0 : gap),
-                                        child: isToday
-                                            ? GestureDetector(
-                                                onTap: () => _toggleToday(day.date),
-                                                child: cell,
-                                              )
-                                            : cell,
-                                      );
-                                    }),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ],
-                      );
+                      final isMobile = constraints.maxWidth < 600;
+                      return isMobile
+                          ? _buildMobileTransposedGrid(constraints, heatmapDays, dayLabels)
+                          : _buildDesktopHorizontalGrid(constraints, heatmapDays, dayLabels);
                     }),
                   ),
                 ],
