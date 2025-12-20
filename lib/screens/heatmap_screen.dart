@@ -80,11 +80,62 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Future<void> _backfillDay(DateTime cellDate) async {
+    final currentStreak = _calculateCurrentStreak(_heatmapDays!);
+    final prefs = await SharedPreferences.getInstance();
+    final dateStr = _formatDate(cellDate);
+    final habits = ref.read(habitListProvider);
+    
+    bool hasAnyCompleted = false;
+    for (final habit in habits) {
+      final key = 'habit_log_${habit.id}_$dateStr';
+      if (prefs.getBool(key) == true) {
+        hasAnyCompleted = true;
+        break;
+      }
+    }
+    
+    final simulatedDays = _heatmapDays!.map((day) {
+      if (DateTime(day.date.year, day.date.month, day.date.day).isAtSameMomentAs(
+          DateTime(cellDate.year, cellDate.month, cellDate.day))) {
+        return HeatmapDay(
+          date: day.date,
+          intensity: hasAnyCompleted ? 0 : 1,
+        );
+      }
+      return day;
+    }).toList();
+    
+    final newStreak = _calculateCurrentStreak(simulatedDays);
+    final streakDiff = newStreak - currentStreak;
+    
+    String? impactMessage;
+    if (streakDiff < 0) {
+      impactMessage = 'This will break your current $currentStreak-day streak.';
+    } else if (streakDiff > 0) {
+      impactMessage = 'This will extend your streak to $newStreak days.';
+    }
+    
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mark day as completed?'),
-        content: Text('Toggle completion for ${_formatDate(cellDate)}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Toggle completion for ${_formatDate(cellDate)}'),
+            if (impactMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                impactMessage,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: streakDiff < 0 ? Colors.red : Colors.green,
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -99,19 +150,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
 
     if (confirmed == true) {
-      final prefs = await SharedPreferences.getInstance();
-      final dateStr = _formatDate(cellDate);
-      final habits = ref.read(habitListProvider);
-      
-      bool hasAnyCompleted = false;
-      for (final habit in habits) {
-        final key = 'habit_log_${habit.id}_$dateStr';
-        if (prefs.getBool(key) == true) {
-          hasAnyCompleted = true;
-          break;
-        }
-      }
-      
       for (final habit in habits) {
         final key = 'habit_log_${habit.id}_$dateStr';
         if (hasAnyCompleted) {
