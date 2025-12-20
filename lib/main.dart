@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/habit_logger_screen.dart';
+import 'screens/heatmap_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -18,6 +19,9 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.green,
       ),
       home: const HabitLoggerScreen(),
+      routes: {
+        '/heatmap': (context) => const HeatmapScreen(),
+      },
     );
   }
 }
