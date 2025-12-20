@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/habit_logger_screen.dart';
+import 'screens/auth_gate.dart';
 import 'screens/heatmap_screen.dart';
 
 void main() {
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.green,
       ),
-      home: const HabitLoggerScreen(),
+      home: const AuthGate(),
       routes: {
         '/heatmap': (context) => const HeatmapScreen(),
       },

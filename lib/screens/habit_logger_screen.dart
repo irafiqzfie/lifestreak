@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../providers/habit_provider.dart';
+import '../providers/sync_provider.dart';
 import '../widgets/score_summary_header.dart';
 
 class HabitLoggerScreen extends ConsumerStatefulWidget {
@@ -12,28 +14,49 @@ class HabitLoggerScreen extends ConsumerStatefulWidget {
 
 class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   @override
+  void initState() {
+    super.initState();
+    ref.listen<List<Habit>>(
+      habitListProvider,
+      (previous, next) {
+        if (previous != next) {
+          ref.read(syncServiceProvider).syncHabitLogs();
+        }
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncServiceProvider).syncHabitLogs();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final habits = ref.watch(habitListProvider);
     final total = habits.length;
     final completed = habits.where((h) => h.completed).length;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateHabitSheet(context),
-        tooltip: 'Add Habit',
-        child: const Icon(Icons.add),
-      ),
       appBar: AppBar(
         title: const Text('Lifestreak'),
         centerTitle: true,
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign out',
+            onPressed: () => ref.read(authProvider.notifier).logout(),
+          ),
+          IconButton(
             icon: const Icon(Icons.grid_on),
             onPressed: () => Navigator.pushNamed(context, '/heatmap'),
             tooltip: 'Heatmap',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateHabitSheet(context),
+        tooltip: 'Add Habit',
+        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         child: Column(
@@ -46,7 +69,6 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
                     Text(
                       _formattedDate(DateTime.now()),
                       style: Theme.of(context).textTheme.bodySmall,
@@ -74,11 +96,8 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
                     const Divider(),
                     const SizedBox(height: 8),
-
-                    // Habit list or empty state
                     Expanded(
                       child: habits.isEmpty
                           ? Center(
@@ -113,7 +132,6 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   }
 
   String _formattedDate(DateTime d) {
-    // TODO: Localize date formatting
     return '${_weekday(d.weekday)}, ${d.month}/${d.day}/${d.year}';
   }
 
@@ -222,7 +240,6 @@ class _HabitListItem extends StatelessWidget {
                   maxLines: 1,
                 ),
               ),
-              // Visual: checkmark appears when completed
               if (completed)
                 const Icon(Icons.check_circle, color: Colors.green)
               else
