@@ -38,17 +38,17 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     // Show loading indicator while prefs are loading
     if (_prefs == null) {
       return const Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFF9FAF7),
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3f6a4a)),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFF9FAF7),
       body: SafeArea(
         child: Column(
           children: [
@@ -447,7 +447,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: isToday
                               ? Border.all(
-                                  color: const Color(0xFF10B981),
+                                  color: const Color(0xFF3f6a4a),
                                   width: 2,
                                 )
                               : null,
@@ -455,7 +455,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                               ? [
                                   BoxShadow(
                                     color: const Color(
-                                      0xFF10B981,
+                                      0xFF3f6a4a,
                                     ).withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
@@ -471,7 +471,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: isToday
-                              ? const Color(0xFF10B981)
+                              ? const Color(0xFF3f6a4a)
                               : const Color(0xFF0F172A),
                         ),
                       ),
@@ -730,7 +730,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         color: _getColorForIntensity(intensity),
         borderRadius: BorderRadius.circular(2),
         border: isToday
-            ? Border.all(color: const Color(0xFF10B981), width: 2)
+            ? Border.all(color: const Color(0xFF3f6a4a), width: 2)
             : null,
       ),
     );
@@ -825,7 +825,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           color: _getColorForIntensity(intensity),
           borderRadius: BorderRadius.circular(4),
           border: isToday
-              ? Border.all(color: const Color(0xFF10B981), width: 2)
+              ? Border.all(color: const Color(0xFF3f6a4a), width: 2)
               : null,
         ),
       );
@@ -843,7 +843,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         border: intensity == -1
             ? Border.all(color: const Color(0xFFCBD5E1), width: 1)
             : intensity == -2
-            ? Border.all(color: const Color(0xFF10B981), width: 2)
+            ? Border.all(color: const Color(0xFF3f6a4a), width: 2)
             : null,
       ),
     );
@@ -932,9 +932,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     if (intensity == -2) return Colors.transparent; // Today cell
     if (intensity == 0.0) return const Color(0xFFF1F5F9);
 
-    // Desaturated green scale (calm, not neon)
-    // Base: #10B981 (emerald-500) - much calmer than #13EC6A
-    const baseGreen = Color(0xFF10B981);
+    // Muted forest green scale - consistent with app-wide design
+    // Base: #3f6a4a (muted forest green from sign-in screen)
+    const baseGreen = Color(0xFF3f6a4a);
 
     if (intensity < 0.25) {
       return baseGreen.withOpacity(0.2);
@@ -966,11 +966,11 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           const SizedBox(width: 8),
           _buildLegendBox(const Color(0xFFF1F5F9)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF10B981).withOpacity(0.3)),
+          _buildLegendBox(const Color(0xFF3f6a4a).withOpacity(0.3)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF10B981).withOpacity(0.6)),
+          _buildLegendBox(const Color(0xFF3f6a4a).withOpacity(0.6)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF10B981)),
+          _buildLegendBox(const Color(0xFF3f6a4a)),
           const SizedBox(width: 8),
           Text(
             'More',
@@ -1252,7 +1252,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 padding: const EdgeInsets.only(top: 3),
                 child: Icon(
                   Icons.verified,
-                  color: const Color(0xFF10B981),
+                  color: const Color(0xFF3f6a4a),
                   size: 22,
                 ),
               ),

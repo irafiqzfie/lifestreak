@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -47,7 +47,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAF7),
       body: SafeArea(
         child: Column(
           children: [
@@ -78,11 +78,11 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     width: 56,
     height: 56,
     decoration: BoxDecoration(
-      color: const Color(0xFF13EC6A),
+      color: const Color(0xFF3f6a4a),
       borderRadius: BorderRadius.circular(28),
       boxShadow: [
         BoxShadow(
-          color: const Color(0xFF13EC6A).withOpacity(0.3),
+          color: const Color(0xFF3f6a4a).withOpacity(0.3),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -120,7 +120,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: const Color(0xFF13EC6A),
+                    color: const Color(0xFF3f6a4a),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -154,12 +154,12 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color(0xFF13EC6A).withOpacity(0.3),
+              color: const Color(0xFF3f6a4a).withOpacity(0.3),
               width: 2,
             ),
-            color: const Color(0xFF13EC6A).withOpacity(0.1),
+            color: const Color(0xFF3f6a4a).withOpacity(0.1),
           ),
-          child: const Icon(Icons.person, color: Color(0xFF13EC6A), size: 24),
+          child: const Icon(Icons.person, color: Color(0xFF3f6a4a), size: 24),
         ),
         Positioned(
           bottom: 0,
@@ -168,7 +168,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: const Color(0xFF13EC6A),
+              color: const Color(0xFF3f6a4a),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
             ),
@@ -238,7 +238,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
       builder: (context, status, _) {
         final color = status == SyncStatus.error
             ? const Color(0xFFEF4444)
-            : const Color(0xFF13EC6A);
+            : const Color(0xFF3f6a4a);
         final label = switch (status) {
           SyncStatus.syncing => 'Syncing...',
           SyncStatus.success => 'Synced',
@@ -346,10 +346,10 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF13EC6A).withOpacity(0.1),
+                  color: const Color(0xFF3f6a4a).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF13EC6A).withOpacity(0.3),
+                    color: const Color(0xFF3f6a4a).withOpacity(0.3),
                   ),
                 ),
                 child: Row(
@@ -357,7 +357,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   children: [
                     const Icon(
                       Icons.verified,
-                      color: Color(0xFF13EC6A),
+                      color: Color(0xFF3f6a4a),
                       size: 18,
                     ),
                     const SizedBox(width: 6),
@@ -366,7 +366,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF13EC6A),
+                        color: const Color(0xFF3f6a4a),
                       ),
                     ),
                   ],
@@ -432,7 +432,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF13EC6A),
+                    color: const Color(0xFF3f6a4a),
                   ),
                 ),
               ),
@@ -463,7 +463,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCompleted
-              ? const Color(0xFF13EC6A).withOpacity(0.3)
+              ? const Color(0xFF3f6a4a).withOpacity(0.3)
               : const Color(0xFFF1F3F2),
         ),
         boxShadow: [
@@ -481,14 +481,14 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             height: 48,
             decoration: BoxDecoration(
               color: isCompleted
-                  ? const Color(0xFF13EC6A).withOpacity(0.1)
+                  ? const Color(0xFF3f6a4a).withOpacity(0.1)
                   : const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               _getHabitIcon(habit.name),
               color: isCompleted
-                  ? const Color(0xFF10B981)
+                  ? const Color(0xFF3f6a4a)
                   : const Color(0xFF9CA3AF),
               size: 28,
             ),
@@ -524,7 +524,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                         margin: const EdgeInsets.only(right: 4),
                         decoration: BoxDecoration(
                           color: streakPattern[i]
-                              ? const Color(0xFF10B981)
+                              ? const Color(0xFF3f6a4a)
                               : const Color(0xFFD1D5DB),
                           shape: BoxShape.circle,
                         ),
@@ -538,7 +538,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
-                          color: const Color(0xFF10B981),
+                          color: const Color(0xFF3f6a4a),
                         ),
                       ),
                     ],
@@ -554,7 +554,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
               height: 32,
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? const Color(0xFF10B981)
+                    ? const Color(0xFF3f6a4a)
                     : Colors.transparent,
                 shape: BoxShape.circle,
                 border: isCompleted
@@ -612,7 +612,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             Icon(
               icon,
               color: isSelected
-                  ? const Color(0xFF13EC6A)
+                  ? const Color(0xFF3f6a4a)
                   : const Color(0xFF9CA3AF),
               size: 26,
             ),
@@ -623,7 +623,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: isSelected
-                    ? const Color(0xFF13EC6A)
+                    ? const Color(0xFF3f6a4a)
                     : const Color(0xFF9CA3AF),
               ),
             ),
@@ -688,7 +688,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF13EC6A),
+                      color: Color(0xFF3f6a4a),
                       width: 2,
                     ),
                   ),
@@ -727,7 +727,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                           }
                         : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF13EC6A),
+                      backgroundColor: const Color(0xFF3f6a4a),
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: const Color(0xFFE5E7EB),
                       padding: const EdgeInsets.symmetric(

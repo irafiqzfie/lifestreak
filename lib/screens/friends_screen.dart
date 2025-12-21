@@ -20,7 +20,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAF7),
       body: SafeArea(
         child: Stack(
           children: [
@@ -106,11 +106,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF13EC6A).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF3f6a4a).withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 20),
+          const Icon(Icons.info_outline, color: Color(0xFF3f6a4a), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -182,7 +182,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13EC6A),
+                backgroundColor: const Color(0xFF3f6a4a),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -232,10 +232,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF13EC6A).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFF3f6a4a).withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF13EC6A).withOpacity(0.1),
+            color: const Color(0xFF3f6a4a).withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -250,13 +250,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: const Color(0xFF13EC6A).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF3f6a4a).withOpacity(0.1),
                     child: Text(
                       'CD',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF13EC6A),
+                        color: const Color(0xFF3f6a4a),
                       ),
                     ),
                   ),
@@ -307,7 +307,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF13EC6A).withOpacity(0.1),
+                            color: const Color(0xFF3f6a4a).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -363,7 +363,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF13EC6A),
+                    backgroundColor: const Color(0xFF3f6a4a),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
@@ -563,13 +563,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFF13EC6A).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF3f6a4a).withOpacity(0.1),
                   child: Text(
                     initials,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF13EC6A),
+                      color: const Color(0xFF3f6a4a),
                     ),
                   ),
                 ),
@@ -587,7 +587,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF13EC6A),
+                          color: Color(0xFF3f6a4a),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -685,14 +685,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF13EC6A).withOpacity(0.5),
+              color: const Color(0xFF3f6a4a).withOpacity(0.5),
               blurRadius: 20,
               spreadRadius: 0,
             ),
           ],
         ),
         child: Material(
-          color: const Color(0xFF13EC6A),
+          color: const Color(0xFF3f6a4a),
           shape: const CircleBorder(),
           elevation: 4,
           child: InkWell(
