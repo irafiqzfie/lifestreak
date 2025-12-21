@@ -1,18 +1,52 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 
-class HeatmapScreen extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/habit_provider.dart';
+
+class HeatmapScreen extends ConsumerStatefulWidget {
   const HeatmapScreen({super.key});
 
   @override
-  State<HeatmapScreen> createState() => _HeatmapScreenState();
+  ConsumerState<HeatmapScreen> createState() => _HeatmapScreenState();
 }
 
-class _HeatmapScreenState extends State<HeatmapScreen> {
+class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
+  SharedPreferences? _prefs;
+  Map<String, double> _intensityCache = {};
   String _selectedTimeframe = 'Quarter';
 
   @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _intensityCache = {}; // Force recalculation
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Show loading indicator while prefs are loading
+    if (_prefs == null) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -110,7 +144,10 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
     final isSelected = _selectedTimeframe == label;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTimeframe = label),
+        onTap: () => setState(() {
+          _selectedTimeframe = label;
+          _intensityCache = {}; // Clear cache when switching views
+        }),
         child: Container(
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
@@ -145,45 +182,17 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   Widget _buildTitle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            _getTitleText(),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
-            ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          _getTitleText(),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
+            height: 1.2,
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF13EC6A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.trending_up,
-                  size: 16,
-                  color: Color(0xFF13EC6A),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _selectedTimeframe == 'Year' ? '+24%' : '+12%',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF13EC6A),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -194,8 +203,20 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
         return 'Weekly Activity';
       case 'Month':
         final now = DateTime.now();
-        const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
+        const months = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
         return '${months[now.month - 1]} Activity';
       case 'Year':
         return 'Yearly Activity';
@@ -226,8 +247,20 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
         start = now.subtract(const Duration(days: 7));
         break;
       case 'Month':
-        const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
+        const months = [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
         final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
         return '${months[now.month - 1]} 1 - ${months[now.month - 1]} $daysInMonth';
       case 'Year':
@@ -261,15 +294,15 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
     if (_selectedTimeframe == 'Week') {
       return _buildWeeklyBars();
     }
-    
+
     if (_selectedTimeframe == 'Month') {
       return _buildMonthlyCalendar();
     }
-    
+
     if (_selectedTimeframe == 'Year') {
       return _buildYearlyHeatmap();
     }
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -287,7 +320,7 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final firstWeekday = firstDayOfMonth.weekday; // 1 = Monday, 7 = Sunday
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -295,18 +328,20 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
           // Day labels
           Row(
             children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                .map((day) => Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF94A3B8),
-                          ),
+                .map(
+                  (day) => Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF94A3B8),
                         ),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 12),
@@ -326,10 +361,10 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
               if (index < firstWeekday - 1) {
                 return const SizedBox();
               }
-              
+
               final day = index - firstWeekday + 2;
               final intensity = _getMonthDayIntensity(day);
-              
+
               return Container(
                 decoration: BoxDecoration(
                   color: _getColorForIntensity(intensity),
@@ -356,21 +391,24 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   }
 
   double _getMonthDayIntensity(int day) {
-    // Generate varied intensities for monthly calendar
-    final hash = (day * 13 + 7) % 100;
-    if (hash < 10) return 0.0; // Empty
-    if (hash < 20) return 0.2;
-    if (hash < 35) return 0.4;
-    if (hash < 50) return 0.6;
-    if (hash < 70) return 0.8;
-    return 1.0;
+    final now = DateTime.now();
+    final date = DateTime(now.year, now.month, day);
+
+    // Only calculate intensity for valid dates in current month
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    if (day < 1 || day > daysInMonth) return 0.0;
+
+    // Don't calculate for future dates
+    if (date.isAfter(now)) return 0.0;
+
+    return _calculateIntensityForDate(date);
   }
 
   Widget _buildWeeklyBars() {
     final now = DateTime.now();
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final dates = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -378,11 +416,12 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
           Row(
             children: List.generate(7, (index) {
               final date = dates[index];
-              final isToday = date.day == now.day && 
-                             date.month == now.month && 
-                             date.year == now.year;
+              final isToday =
+                  date.day == now.day &&
+                  date.month == now.month &&
+                  date.year == now.year;
               final intensity = _getBarIntensity(index);
-              
+
               return Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(
@@ -409,14 +448,16 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: isToday
                               ? Border.all(
-                                  color: const Color(0xFF13EC6A),
+                                  color: const Color(0xFF10B981),
                                   width: 2,
                                 )
                               : null,
                           boxShadow: isToday
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF13EC6A).withOpacity(0.3),
+                                    color: const Color(
+                                      0xFF10B981,
+                                    ).withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -431,7 +472,7 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: isToday
-                              ? const Color(0xFF13EC6A)
+                              ? const Color(0xFF10B981)
                               : const Color(0xFF0F172A),
                         ),
                       ),
@@ -447,22 +488,34 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   }
 
   double _getBarIntensity(int dayIndex) {
-    // Generate varied intensities for the weekly bars
-    const intensities = [0.4, 0.8, 1.0, 0.2, 0.0, 0.6, 0.9];
-    return intensities[dayIndex % 7];
+    final now = DateTime.now();
+    final date = now.subtract(Duration(days: 6 - dayIndex));
+    return _calculateIntensityForDate(date);
   }
 
   Widget _buildMonthLabels() {
     final now = DateTime.now();
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     // Calculate which months to show based on 90 days back
     final start = now.subtract(const Duration(days: 90));
     final month1 = months[start.month - 1];
     final month2 = months[(start.month % 12)];
     final month3 = months[now.month - 1];
-    
+
     return Padding(
       padding: const EdgeInsets.only(left: 40),
       child: Row(
@@ -504,17 +557,15 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
       builder: (context, constraints) {
         final weeks = (days / rows).ceil();
         final totalGaps = (weeks - 1) * gap;
-        final cellSize = (constraints.maxWidth - totalGaps - 32 - 8) / weeks; // subtract day labels width + spacer
+        final cellSize =
+            (constraints.maxWidth - totalGaps - 32 - 8) /
+            weeks; // subtract day labels width + spacer
         final gridHeight = rows * cellSize + (rows - 1) * gap;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: gridHeight,
-              width: 32,
-              child: _buildDayLabels(),
-            ),
+            SizedBox(height: gridHeight, width: 32, child: _buildDayLabels()),
             const SizedBox(width: 8),
             Expanded(
               child: SizedBox(
@@ -630,7 +681,9 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
                             children: List.generate(weeks, (col) {
                               final cellIndex = col * rows + row;
                               return Padding(
-                                padding: EdgeInsets.only(left: col == 0 ? 0 : gap),
+                                padding: EdgeInsets.only(
+                                  left: col == 0 ? 0 : gap,
+                                ),
                                 child: SizedBox(
                                   width: cellSize,
                                   height: cellSize,
@@ -660,16 +713,26 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
       return const SizedBox();
     }
 
-    final intensity = _getCellIntensity(index, totalDays);
+    final now = DateTime.now();
+    final daysBack = totalDays - 1 - index;
+    final date = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: daysBack));
+    final intensity = _calculateIntensityForDate(date);
+
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final todayOnly = DateTime(now.year, now.month, now.day);
+    final isToday = dateOnly.isAtSameMomentAs(todayOnly);
+
     return Container(
       decoration: BoxDecoration(
         color: _getColorForIntensity(intensity),
         borderRadius: BorderRadius.circular(2),
-        border: intensity == -1
-            ? Border.all(color: const Color(0xFFCBD5E1), width: 1)
-            : intensity == -2
-                ? Border.all(color: const Color(0xFF13EC6A), width: 2)
-                : null,
+        border: isToday
+            ? Border.all(color: const Color(0xFF10B981), width: 2)
+            : null,
       ),
     );
   }
@@ -730,11 +793,57 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
 
   Widget _buildHeatmapCell(int index, int totalDays) {
     final intensity = _getCellIntensity(index, totalDays);
-    return _buildHeatmapCellManual(index, totalDays, overrideIntensity: intensity);
+    return _buildHeatmapCellManual(
+      index,
+      totalDays,
+      overrideIntensity: intensity,
+    );
   }
 
-  Widget _buildHeatmapCellManual(int index, int totalDays, {double? overrideIntensity}) {
-    final intensity = overrideIntensity ??
+  Widget _buildHeatmapCellManual(
+    int index,
+    int totalDays, {
+    double? overrideIntensity,
+  }) {
+    // For Quarter/Year views, calculate date directly
+    if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
+      if (index >= totalDays) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
+          ),
+        );
+      }
+
+      final now = DateTime.now();
+      final daysBack = totalDays - 1 - index;
+      final date = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: daysBack));
+      final intensity = _calculateIntensityForDate(date);
+
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      final todayOnly = DateTime(now.year, now.month, now.day);
+      final isToday = dateOnly.isAtSameMomentAs(todayOnly);
+
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(intensity),
+          borderRadius: BorderRadius.circular(4),
+          border: isToday
+              ? Border.all(color: const Color(0xFF10B981), width: 2)
+              : null,
+        ),
+      );
+    }
+
+    // Original logic for other views
+    final intensity =
+        overrideIntensity ??
         (index >= totalDays ? -1 : _getCellIntensity(index, totalDays));
 
     return Container(
@@ -744,31 +853,88 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
         border: intensity == -1
             ? Border.all(color: const Color(0xFFCBD5E1), width: 1)
             : intensity == -2
-                ? Border.all(color: const Color(0xFF13EC6A), width: 2)
-                : null,
+            ? Border.all(color: const Color(0xFF10B981), width: 2)
+            : null,
       ),
     );
   }
 
   double _getCellIntensity(int index, int totalDays) {
-    // Last 4 cells are future (empty with border)
-    if (index >= totalDays - 4) {
-      return -1; // Empty future cell
+    final date = _getDateForIndex(index);
+    final today = DateTime.now();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final todayOnly = DateTime(today.year, today.month, today.day);
+
+    // Future cells
+    if (dateOnly.isAfter(todayOnly)) {
+      return -1; // Future
     }
 
-    // Second to last is today (highlighted)
-    if (index == totalDays - 5) {
-      return -2; // Today cell
+    // Today cell (highlighted)
+    if (dateOnly.isAtSameMomentAs(todayOnly)) {
+      return -2; // Today
     }
 
-    // Generate varied intensities based on position
-    final hash = (index * 17 + 23) % 100;
-    if (hash < 5) return 0.0; // Empty
-    if (hash < 20) return 0.2;
-    if (hash < 40) return 0.4;
-    if (hash < 60) return 0.6;
-    if (hash < 80) return 0.8;
-    return 1.0;
+    // Check cache
+    final dateKey = _formatDateKey(date);
+    if (_intensityCache.containsKey(dateKey)) {
+      return _intensityCache[dateKey]!;
+    }
+
+    // Calculate intensity from real data
+    final intensity = _calculateIntensityForDate(date);
+    _intensityCache[dateKey] = intensity;
+    return intensity;
+  }
+
+  DateTime _getDateForIndex(int index) {
+    final now = DateTime.now();
+    int daysToSubtract;
+
+    switch (_selectedTimeframe) {
+      case 'Week':
+        daysToSubtract = 6 - index; // 0 = 6 days ago, 6 = today
+        break;
+      case 'Month':
+        daysToSubtract = 29 - index;
+        break;
+      case 'Year':
+        daysToSubtract = 364 - index;
+        break;
+      default: // Quarter
+        daysToSubtract = 89 - index;
+    }
+
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: daysToSubtract));
+  }
+
+  String _formatDateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  double _calculateIntensityForDate(DateTime date) {
+    if (_prefs == null) return 0.0;
+
+    final habits = ref.read(habitListProvider);
+    if (habits.isEmpty) return 0.0;
+
+    final dateKey = _formatDateKey(date);
+    int completedCount = 0;
+
+    // Count completed habits for this date
+    for (final habit in habits) {
+      final logKey = 'habit_log_${habit.id}_$dateKey';
+      if (_prefs!.getBool(logKey) == true) {
+        completedCount++;
+      }
+    }
+
+    // Intensity = completed / total (PRD formula)
+    return habits.isEmpty ? 0.0 : completedCount / habits.length;
   }
 
   Color _getColorForIntensity(double intensity) {
@@ -776,8 +942,21 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
     if (intensity == -2) return Colors.transparent; // Today cell
     if (intensity == 0.0) return const Color(0xFFF1F5F9);
 
-    const primary = Color(0xFF13EC6A);
-    return primary.withOpacity(intensity);
+    // Desaturated green scale (calm, not neon)
+    // Base: #10B981 (emerald-500) - much calmer than #13EC6A
+    const baseGreen = Color(0xFF10B981);
+
+    if (intensity < 0.25) {
+      return baseGreen.withOpacity(0.2);
+    } else if (intensity < 0.5) {
+      return baseGreen.withOpacity(0.4);
+    } else if (intensity < 0.75) {
+      return baseGreen.withOpacity(0.6);
+    } else if (intensity < 1.0) {
+      return baseGreen.withOpacity(0.8);
+    } else {
+      return baseGreen; // Perfect day - solid but not glowing
+    }
   }
 
   Widget _buildLegend() {
@@ -797,11 +976,11 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
           const SizedBox(width: 8),
           _buildLegendBox(const Color(0xFFF1F5F9)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF13EC6A).withOpacity(0.3)),
+          _buildLegendBox(const Color(0xFF10B981).withOpacity(0.3)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF13EC6A).withOpacity(0.6)),
+          _buildLegendBox(const Color(0xFF10B981).withOpacity(0.6)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF13EC6A)),
+          _buildLegendBox(const Color(0xFF10B981)),
           const SizedBox(width: 8),
           Text(
             'More',
@@ -828,101 +1007,41 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   }
 
   Widget _buildStatsCards() {
-    if (_selectedTimeframe == 'Week') {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(child: _buildStreakCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildConsistencyCard()),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildWeeklyHabitsCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildPerfectDaysCard(count: '3')),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    
-    if (_selectedTimeframe == 'Month') {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(child: _buildStreakCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildConsistencyCard(subtitle: 'High performance')),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildTotalHabitsCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildPerfectDaysCard(count: '18')),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    
-    if (_selectedTimeframe == 'Year') {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(child: _buildStreakCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildConsistencyCard(subtitle: 'High performance')),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildTotalCompletionsCard()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildPerfectDaysCard(count: '156')),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    
+    const targetCardWidth = 120.0;
+    const gap = 28.0;
+    const targetGroupWidth = targetCardWidth * 3 + gap * 2;
+
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _buildStreakCard()),
-              const SizedBox(width: 16),
-              Expanded(child: _buildConsistencyCard(subtitle: 'High performance')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildTotalCompletionsCard()),
-              const SizedBox(width: 16),
-              Expanded(child: _buildPerfectDaysCard(count: '45')),
-            ],
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Keep the row centered as a single unit, but ensure there is always
+          // breathing room from screen edges.
+          final available = math.max(0.0, constraints.maxWidth - 32);
+          final groupWidth = math.min(targetGroupWidth, available);
+
+          // If we have to shrink, shrink the card widths equally (still fixed
+          // and identical within the row).
+          final cardWidth = (groupWidth - gap * 2) / 3;
+
+          return Center(
+            child: SizedBox(
+              width: groupWidth,
+              child: Row(
+                children: [
+                  SizedBox(width: cardWidth, child: _buildStreakCard()),
+                  const SizedBox(width: gap),
+                  SizedBox(width: cardWidth, child: _buildConsistencyCard()),
+                  const SizedBox(width: gap),
+                  SizedBox(
+                    width: cardWidth,
+                    child: _buildPerfectDaysCard(count: ''),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -964,126 +1083,192 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   }
 
   Widget _buildStreakCard() {
-    final days = _selectedTimeframe == 'Year' ? '45' : '24';
-    
+    final streakDays = _calculateCurrentStreak();
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      height: 120,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.local_fire_department,
-                color: Color(0xFF13EC6A),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
               Text(
-                'Current Streak',
+                streakDays.toString(),
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Icon(
+                  Icons.local_fire_department,
+                  color: const Color(0xFFEA580C),
+                  size: 22,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            '$days Days',
+            'Current Streak',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+              letterSpacing: 0.2,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '+2 from last week',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF13EC6A),
-            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildConsistencyCard({String subtitle = 'Excellent week!'}) {
-    String percentage;
-    String defaultSubtitle;
-    
-    if (_selectedTimeframe == 'Year') {
-      percentage = '85%';
-      defaultSubtitle = 'High performance';
-    } else if (_selectedTimeframe == 'Quarter') {
-      percentage = '85%';
-      defaultSubtitle = subtitle;
-    } else {
-      percentage = '92%';
-      defaultSubtitle = subtitle;
+  int _calculateCurrentStreak() {
+    if (_prefs == null) return 0;
+
+    final habits = ref.read(habitListProvider);
+    if (habits.isEmpty) return 0;
+
+    final today = DateTime.now();
+    int streak = 0;
+
+    // Check backwards from today
+    for (int i = 0; i < 365; i++) {
+      final checkDate = DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ).subtract(Duration(days: i));
+      final dateKey = _formatDateKey(checkDate);
+      int completedCount = 0;
+
+      for (final habit in habits) {
+        final logKey = 'habit_log_${habit.id}_$dateKey';
+        if (_prefs!.getBool(logKey) == true) {
+          completedCount++;
+        }
+      }
+
+      // Active day = at least 1 habit completed (PRD)
+      if (completedCount >= 1) {
+        streak++;
+      } else {
+        break; // Streak broken
+      }
     }
-    
+
+    return streak;
+  }
+
+  Widget _buildConsistencyCard() {
+    final consistency = _calculateConsistency();
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      height: 120,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.donut_large, color: Color(0xFF60A5FA), size: 20),
-              const SizedBox(width: 8),
               Text(
-                'Consistency',
+                '${consistency.toStringAsFixed(0)}%',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Icon(
+                  Icons.donut_large,
+                  color: const Color(0xFF3B82F6),
+                  size: 20,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            percentage,
+            'Consistency',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            defaultSubtitle,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF94A3B8),
+              color: const Color(0xFF64748B),
+              letterSpacing: 0.2,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
+  }
+
+  double _calculateConsistency() {
+    if (_prefs == null) return 0.0;
+
+    final habits = ref.read(habitListProvider);
+    if (habits.isEmpty) return 0.0;
+
+    final today = DateTime.now();
+    final windowDays = 90; // Rolling 90 days (PRD)
+    int activeDays = 0;
+
+    for (int i = 0; i < windowDays; i++) {
+      final checkDate = DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ).subtract(Duration(days: i));
+      final dateKey = _formatDateKey(checkDate);
+      int completedCount = 0;
+
+      for (final habit in habits) {
+        final logKey = 'habit_log_${habit.id}_$dateKey';
+        if (_prefs!.getBool(logKey) == true) {
+          completedCount++;
+        }
+      }
+
+      // Active day = at least 1 habit completed
+      if (completedCount >= 1) {
+        activeDays++;
+      }
+    }
+
+    return (activeDays / windowDays) * 100;
   }
 
   Widget _buildTotalCompletionsCard() {
     final count = _selectedTimeframe == 'Year' ? '1,248' : '312';
-    
+
     return Container(
       height: 112,
       padding: const EdgeInsets.all(20),
@@ -1120,63 +1305,118 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
   }
 
   Widget _buildPerfectDaysCard({required String count}) {
+    final perfectDays = _calculatePerfectDays();
+
     return Container(
-      height: 112,
-      padding: const EdgeInsets.all(20),
+      height: 120,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PERFECT DAYS',
+                perfectDays.toString(),
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
-                  letterSpacing: 0.5,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                  height: 1,
                 ),
               ),
-              const Icon(Icons.verified, color: Color(0xFF13EC6A), size: 16),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Icon(
+                  Icons.verified,
+                  color: const Color(0xFF10B981),
+                  size: 22,
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 8),
           Text(
-            count,
+            'Perfect Days',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+              letterSpacing: 0.2,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
+  int _calculatePerfectDays() {
+    if (_prefs == null) return 0;
+
+    final habits = ref.read(habitListProvider);
+    if (habits.isEmpty) return 0;
+
+    final today = DateTime.now();
+    int daysToCheck;
+
+    switch (_selectedTimeframe) {
+      case 'Week':
+        daysToCheck = 7;
+        break;
+      case 'Month':
+        daysToCheck = 30;
+        break;
+      case 'Year':
+        daysToCheck = 365;
+        break;
+      default: // Quarter
+        daysToCheck = 90;
+    }
+
+    int perfectCount = 0;
+
+    for (int i = 0; i < daysToCheck; i++) {
+      final checkDate = DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ).subtract(Duration(days: i));
+      final dateKey = _formatDateKey(checkDate);
+      int completedCount = 0;
+
+      for (final habit in habits) {
+        final logKey = 'habit_log_${habit.id}_$dateKey';
+        if (_prefs!.getBool(logKey) == true) {
+          completedCount++;
+        }
+      }
+
+      // Perfect Day = completed ALL habits (PRD formula)
+      if (completedCount == habits.length && habits.isNotEmpty) {
+        perfectCount++;
+      }
+    }
+
+    return perfectCount;
+  }
+
   Widget _buildShareButton() {
     String buttonText;
     switch (_selectedTimeframe) {
-      case 'Week':
-        buttonText = 'Share Weekly Report';
-        break;
-      case 'Month':
-        buttonText = 'Share Monthly Report';
-        break;
-      case 'Year':
-        buttonText = 'Share Yearly Report';
-        break;
       default:
-        buttonText = 'Share Streak';
+        buttonText = 'Share Progress';
     }
-    
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: SizedBox(

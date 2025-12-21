@@ -85,7 +85,115 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   }
 
   Widget _buildDailyScoreCard(int completed, int total, double progress) {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF1F3F2)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Daily Score', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))), const SizedBox(height: 4), Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [Text('${completed * 100}', style: GoogleFonts.plusJakartaSans(fontSize: 36, fontWeight: FontWeight.w800, color: const Color(0xFF111827), height: 1)), const SizedBox(width: 4), Text(completed >= total * 0.8 ? 'High' : 'Good', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: completed >= total * 0.8 ? const Color(0xFF10B981) : const Color(0xFF6B7280)))])]), Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('Completed', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))), const SizedBox(height: 4), Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [Text('$completed', style: GoogleFonts.plusJakartaSans(fontSize: 30, fontWeight: FontWeight.w800, color: const Color(0xFF111827), height: 1)), Text(' / $total', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w500, color: const Color(0xFF9CA3AF)))])])]), const SizedBox(height: 24), Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Progress', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF9CA3AF))), Text('${(progress * 100).toInt()}%', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF9CA3AF)))]), const SizedBox(height: 8), Container(height: 12, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(6)), child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: progress, child: Container(decoration: BoxDecoration(color: const Color(0xFF13EC6A), borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: const Color(0xFF13EC6A).withOpacity(0.4), blurRadius: 12)]))))])])));
+    final isPerfectDay = completed > 0 && completed == total;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F3F2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Today',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'Completed ',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                      ),
+                    ),
+                    Text(
+                      '$completed',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF111827),
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      ' / $total',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'habits',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            ),
+            if (isPerfectDay)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF13EC6A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF13EC6A).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.verified,
+                      color: Color(0xFF13EC6A),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Perfect Day',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF13EC6A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildHabitsSection(List<Habit> habits) {
@@ -101,7 +209,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isCompleted ? const Color(0xFF13EC6A).withOpacity(0.3) : const Color(0xFFF1F3F2)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Row(children: [Container(width: 48, height: 48, decoration: BoxDecoration(color: isCompleted ? const Color(0xFF13EC6A).withOpacity(0.1) : const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(12)), child: Icon(_getHabitIcon(habit.name), color: isCompleted ? const Color(0xFF10B981) : const Color(0xFF9CA3AF), size: 28)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(habit.name, style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: isCompleted ? const Color(0xFF9CA3AF) : const Color(0xFF1F2937), decoration: isCompleted ? TextDecoration.lineThrough : null, decorationColor: const Color(0xFFD1D5DB), decorationThickness: 2), maxLines: 1, overflow: TextOverflow.ellipsis), const SizedBox(height: 6), Row(children: [...List.generate(5, (i) => Container(width: 6, height: 6, margin: const EdgeInsets.only(right: 4), decoration: BoxDecoration(color: streakPattern[i] ? const Color(0xFF10B981) : const Color(0xFFD1D5DB), shape: BoxShape.circle))), if (streakDays > 0) ...[const SizedBox(width: 4), Text('$streakDays DAY STREAK', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.5, color: const Color(0xFF10B981)))]])])), GestureDetector(onTap: () => ref.read(habitListProvider.notifier).toggle(habit.id), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: isCompleted ? const Color(0xFF10B981) : Colors.transparent, shape: BoxShape.circle, border: isCompleted ? null : Border.all(color: const Color(0xFFE5E7EB), width: 2)), child: isCompleted ? const Icon(Icons.check, color: Colors.white, size: 20) : null))]));
   }
 
-  Widget _buildBottomNav() => Container(height: 80, decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), border: const Border(top: BorderSide(color: Color(0xFFF1F3F2), width: 1)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, -5))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildNavItem(Icons.home, 'Home', 0, null), _buildNavItem(Icons.bar_chart, 'Stats', 1, '/heatmap'), _buildNavItem(Icons.groups, 'Social', 2, '/friends'), _buildNavItem(Icons.settings, 'Settings', 3, null)]));
+  Widget _buildBottomNav() => Container(height: 80, decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), border: const Border(top: BorderSide(color: Color(0xFFF1F3F2), width: 1)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, -5))]), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildNavItem(Icons.home, 'Home', 0, null), _buildNavItem(Icons.bar_chart, 'Stats', 1, '/heatmap'), _buildNavItem(Icons.groups, 'Social', 2, '/friends'), _buildNavItem(Icons.settings, 'Settings', 3, '/settings')]));
 
   Widget _buildNavItem(IconData icon, String label, int index, String? route) {
     final isSelected = _selectedNavIndex == index;

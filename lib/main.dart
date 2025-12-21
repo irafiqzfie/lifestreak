@@ -4,6 +4,7 @@ import 'screens/auth_gate.dart';
 import 'screens/friends_screen.dart';
 import 'screens/heatmap_screen.dart';
 import 'screens/habit_logger_screen.dart';
+import 'screens/settings_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         '/friends': (context) => const FriendsScreen(),
         '/heatmap': (context) => const HeatmapScreen(),
         '/habits': (context) => const HabitLoggerScreen(),
+        '/settings': (context) => const SettingsScreen(),
       },
     );
   }
