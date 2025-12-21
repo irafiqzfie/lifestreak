@@ -47,7 +47,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAF7),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [

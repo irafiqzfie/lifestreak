@@ -24,10 +24,10 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF3f6a4a),
           primary: const Color(0xFF3f6a4a),
           surface: Colors.white,
-          background: const Color(0xFFF9FAF7),
+          background: Colors.white,
         ),
         textTheme: GoogleFonts.interTextTheme(),
-        scaffoldBackgroundColor: const Color(0xFFF9FAF7),
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: const AuthGate(),
       routes: {

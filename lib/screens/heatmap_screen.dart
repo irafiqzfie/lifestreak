@@ -38,7 +38,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     // Show loading indicator while prefs are loading
     if (_prefs == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF9FAF7),
+        backgroundColor: Colors.white,
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3f6a4a)),
@@ -48,7 +48,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Color(0xFFF9FAF7),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
