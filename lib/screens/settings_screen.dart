@@ -12,6 +12,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String selectedTheme = 'Light';
   String selectedStartOfWeek = 'Mon';
 
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete your account? This will permanently delete all your habit data and cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion is not yet implemented'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPlaceholderDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -495,21 +544,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.policy,
                 title: 'Privacy Policy',
                 trailingIcon: Icons.open_in_new,
-                onTap: () {},
+                onTap: () => _showPlaceholderDialog(
+                  'Privacy Policy',
+                  'Privacy policy content will be available in the production release.',
+                ),
               ),
               Container(height: 1, color: const Color(0xFFF3F4F6)),
               _buildLegalItem(
                 icon: Icons.description,
                 title: 'Terms of Service',
                 trailingIcon: Icons.open_in_new,
-                onTap: () {},
+                onTap: () => _showPlaceholderDialog(
+                  'Terms of Service',
+                  'Terms of service will be available in the production release.',
+                ),
               ),
               Container(height: 1, color: const Color(0xFFF3F4F6)),
               _buildLegalItem(
                 icon: Icons.support_agent,
                 title: 'Contact Support',
                 trailingIcon: Icons.chevron_right,
-                onTap: () {},
+                onTap: () => _showPlaceholderDialog(
+                  'Contact Support',
+                  'For support, please email: support@lifestreak.app',
+                ),
               ),
             ],
           ),
@@ -568,7 +626,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       child: InkWell(
-        onTap: () {},
+        onTap: _showDeleteConfirmation,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

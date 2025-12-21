@@ -22,14 +22,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.dispose();
   }
 
-  void _requestLink() {
+  void _requestCode() {
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
     _lastEmailSent = email;
     ref.read(authProvider.notifier).requestMagicLink(email);
   }
 
-  void _resendLink() {
+  void _resendCode() {
     if (_lastEmailSent != null) {
       ref.read(authProvider.notifier).requestMagicLink(_lastEmailSent!);
     }
@@ -50,7 +50,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome to Lifestreak'),
+        title: const Text('Sign In'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -63,7 +63,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               if (isBusy) const LinearProgressIndicator(),
               if (!hasRequestId) ...[
                 Text(
-                  'Sign in with your email to keep your streak data safe and synced across devices.',
+                  'Enter your email to receive a verification code. Your habit data will be saved and synced across your devices.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
@@ -77,14 +77,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     hintText: 'you@example.com',
                   ),
                   enabled: !isBusy,
-                  onSubmitted: (_) => _requestLink(),
+                  onSubmitted: (_) => _requestCode(),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: isBusy ? null : _requestLink,
-                    child: const Text('Send sign-in code'),
+                    onPressed: isBusy ? null : _requestCode,
+                    child: const Text('Send verification code'),
                   ),
                 ),
               ] else ...[
@@ -127,7 +127,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton(
-                    onPressed: isBusy ? null : _resendLink,
+                    onPressed: isBusy ? null : _resendCode,
                     child: const Text('Resend code'),
                   ),
                 ),

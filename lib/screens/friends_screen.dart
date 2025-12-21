@@ -34,6 +34,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _buildPrivacyBanner(),
+                          const SizedBox(height: 24),
                           _buildAddFriendSection(),
                           const SizedBox(height: 32),
                           _buildPendingRequestsSection(),
@@ -94,6 +96,33 @@ class _FriendsScreenState extends State<FriendsScreen> {
         height: 40,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
         child: Icon(icon, color: const Color(0xFF94A3B8), size: 24),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF13EC6A).withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Friends can see your daily completion status for each habit. No other data is shared.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: const Color(0xFF064E3B),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -294,7 +323,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '30 day streak • Wants to connect',
+                      'Wants to connect',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         color: const Color(0xFF64748B),
@@ -427,7 +456,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '7 day streak',
+                  'Request sent',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     color: const Color(0xFF64748B),
@@ -489,7 +518,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             children: [
               _buildFriendItem(
                 name: 'Alice Cooper',
-                status: '15 day streak',
+                status: 'Active today',
                 isOnline: true,
                 initials: 'AC',
               ),

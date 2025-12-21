@@ -64,7 +64,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                     _buildHeatmap(),
                     _buildLegend(),
                     _buildStatsCards(),
-                    _buildShareButton(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -791,15 +790,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
   }
 
-  Widget _buildHeatmapCell(int index, int totalDays) {
-    final intensity = _getCellIntensity(index, totalDays);
-    return _buildHeatmapCellManual(
-      index,
-      totalDays,
-      overrideIntensity: intensity,
-    );
-  }
-
   Widget _buildHeatmapCellManual(
     int index,
     int totalDays, {
@@ -1046,42 +1036,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
   }
 
-  Widget _buildWeeklyHabitsCard() {
-    return Container(
-      height: 112,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'WEEKLY HABITS',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            '34',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStreakCard() {
     final streakDays = _calculateCurrentStreak();
 
@@ -1266,44 +1220,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return (activeDays / windowDays) * 100;
   }
 
-  Widget _buildTotalCompletionsCard() {
-    final count = _selectedTimeframe == 'Year' ? '1,248' : '312';
-
-    return Container(
-      height: 112,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'TOTAL COMPLETIONS',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            count,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPerfectDaysCard({required String count}) {
     final perfectDays = _calculatePerfectDays();
 
@@ -1408,82 +1324,5 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     }
 
     return perfectCount;
-  }
-
-  Widget _buildShareButton() {
-    String buttonText;
-    switch (_selectedTimeframe) {
-      default:
-        buttonText = 'Share Progress';
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0F172A),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.ios_share, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                buttonText,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTotalHabitsCard() {
-    return Container(
-      height: 112,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'TOTAL HABITS',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            '142',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
