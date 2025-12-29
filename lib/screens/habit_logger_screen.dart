@@ -18,6 +18,7 @@ class HabitLoggerScreen extends ConsumerStatefulWidget {
 
 class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   int _selectedNavIndex = 0;
+  bool _isEditMode = false;
 
   IconData _getHabitIcon(String habitName) {
     final nameLower = habitName.toLowerCase();
@@ -394,9 +395,13 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  setState(() {
+                    _isEditMode = !_isEditMode;
+                  });
+                },
                 child: Text(
-                  'Edit List',
+                  _isEditMode ? 'Done' : 'Edit List',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -411,7 +416,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             habits.length,
             (i) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildHabitCard(habits[i]),
+              child: _buildHabitCard(habits[i], isEditMode: _isEditMode),
             ),
           ),
         ],
@@ -419,7 +424,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     );
   }
 
-  Widget _buildHabitCard(Habit habit) {
+  Widget _buildHabitCard(Habit habit, {bool isEditMode = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = habit.completed;
     final hash = habit.name.hashCode.abs();
@@ -445,23 +450,88 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isCompleted
-                  ? const Color(0xFF3f6a4a).withOpacity(0.1)
-                  : const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              habit.iconCodePoint != null 
-                  ? IconData(habit.iconCodePoint!, fontFamily: 'MaterialIcons')
-                  : _getHabitIcon(habit.name),
-              color: isCompleted
-                  ? const Color(0xFF3f6a4a)
-                  : (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF)),
-              size: 28,
+          GestureDetector(
+            onTap: isEditMode
+                ? () => _showIconPicker(context, (icon) {
+                      ref.read(habitListProvider.notifier).updateIcon(habit.id, icon.codePoint);
+                    })
+                : null,
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: isCompleted
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF3f6a4a).withOpacity(0.15),
+                          const Color(0xFF3f6a4a).withOpacity(0.08),
+                        ],
+                      )
+                    : null,
+                color: !isCompleted ? const Color(0xFFF8F9FA) : null,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(
+                  color: isEditMode
+                      ? const Color(0xFF3f6a4a)
+                      : (isCompleted
+                          ? const Color(0xFF3f6a4a).withOpacity(0.3)
+                          : const Color(0xFFE5E7EB)),
+                  width: isEditMode ? 2 : 1.5,
+                ),
+                boxShadow: isCompleted ? [
+                  BoxShadow(
+                    color: const Color(0xFF3f6a4a).withOpacity(0.15),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ] : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Icon(
+                      habit.iconCodePoint != null 
+                          ? IconData(habit.iconCodePoint!, fontFamily: 'MaterialIcons')
+                          : _getHabitIcon(habit.name),
+                      color: isCompleted
+                          ? const Color(0xFF3f6a4a)
+                          : (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF)),
+                      size: 28,
+                    ),
+                  ),
+                  if (isEditMode)
+                    Positioned(
+                      right: 2,
+                      bottom: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3f6a4a),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 8,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -518,25 +588,109 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => ref.read(habitListProvider.notifier).toggle(habit.id),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isCompleted
-                    ? const Color(0xFF3f6a4a)
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-                border: isCompleted
-                    ? null
-                    : Border.all(color: const Color(0xFFE5E7EB), width: 2),
+          if (isEditMode) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showRenameDialog(habit),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF3f6a4a).withOpacity(0.1),
+                  border: Border.all(
+                    color: const Color(0xFF3f6a4a),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  color: Color(0xFF3f6a4a),
+                  size: 18,
+                ),
               ),
-              child: isCompleted
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
-                  : null,
             ),
-          ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(
+                          'Delete Habit',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        content: Text(
+                          'Are you sure you want to delete "${habit.name}"? This will remove all completion history.',
+                          style: GoogleFonts.plusJakartaSans(),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(
+                              'Cancel',
+                              style: GoogleFonts.plusJakartaSans(),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              ref.read(habitListProvider.notifier).deleteHabit(habit.id);
+                              Navigator.pop(ctx);
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Text(
+                              'Delete',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(
+                        color: Colors.red,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.remove,
+                      color: Colors.red,
+                      size: 18,
+                    ),
+                  ),
+                ),
+          ] else
+            GestureDetector(
+                  onTap: () => ref.read(habitListProvider.notifier).toggle(habit.id),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? const Color(0xFF3f6a4a)
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: isCompleted
+                          ? null
+                          : Border.all(color: const Color(0xFFE5E7EB), width: 2),
+                    ),
+                    child: isCompleted
+                        ? const Icon(Icons.check, color: Colors.white, size: 20)
+                        : null,
+                  ),
+                ),
         ],
       ),
     );
@@ -646,22 +800,64 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                     onTap: () => _showIconPicker(context, (icon) {
                       setState(() => selectedIcon = icon);
                     }),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      width: 56,
-                      height: 56,
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3f6a4a).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF3f6a4a).withOpacity(0.3),
-                          width: 1.5,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF3f6a4a).withOpacity(0.12),
+                            const Color(0xFF3f6a4a).withOpacity(0.08),
+                          ],
                         ),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFF3f6a4a).withOpacity(0.4),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3f6a4a).withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        selectedIcon,
-                        color: const Color(0xFF3f6a4a),
-                        size: 28,
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Icon(
+                              selectedIcon,
+                              color: const Color(0xFF3f6a4a),
+                              size: 32,
+                            ),
+                          ),
+                          Positioned(
+                            right: 4,
+                            bottom: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3f6a4a),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 10,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -835,36 +1031,55 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 280,
+              height: 320,
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
                   childAspectRatio: 1,
                 ),
                 itemCount: icons.length,
                 itemBuilder: (context, index) {
                   final icon = icons[index];
-                  return InkWell(
-                    onTap: () {
-                      onIconSelected(icon);
-                      Navigator.pop(ctx);
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3f6a4a).withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF3f6a4a).withOpacity(0.2),
-                          width: 1,
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        onIconSelected(icon);
+                        Navigator.pop(ctx);
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      splashColor: const Color(0xFF3f6a4a).withOpacity(0.2),
+                      highlightColor: const Color(0xFF3f6a4a).withOpacity(0.1),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF3f6a4a).withOpacity(0.12),
+                              const Color(0xFF3f6a4a).withOpacity(0.06),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFF3f6a4a).withOpacity(0.25),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF3f6a4a).withOpacity(0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: const Color(0xFF3f6a4a),
-                        size: 24,
+                        child: Icon(
+                          icon,
+                          color: const Color(0xFF3f6a4a),
+                          size: 28,
+                        ),
                       ),
                     ),
                   );
@@ -873,6 +1088,100 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showRenameDialog(Habit habit) {
+    final controller = TextEditingController(text: habit.name);
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Rename Habit',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: StatefulBuilder(
+          builder: (context, setState) => TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 1,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Habit name',
+              labelStyle: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF6B7280),
+              ),
+              errorText: errorMessage,
+              errorStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: const Color(0xFFEF4444),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF3f6a4a),
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+            ),
+            onChanged: (v) {
+              setState(() {
+                errorMessage = null;
+              });
+            },
+            onSubmitted: (v) {
+              if (v.trim().isEmpty) {
+                setState(() => errorMessage = 'Please enter a habit name.');
+                return;
+              }
+              ref.read(habitListProvider.notifier).renameHabit(habit.id, v.trim());
+              Navigator.pop(ctx);
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              if (controller.text.trim().isEmpty) {
+                return;
+              }
+              ref.read(habitListProvider.notifier).renameHabit(habit.id, controller.text.trim());
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF3f6a4a),
+            ),
+            child: Text(
+              'Rename',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

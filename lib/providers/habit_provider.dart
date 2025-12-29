@@ -125,6 +125,34 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
     state = [...state, newHabit];
     _saveHabitList();
   }
+
+  void deleteHabit(String id) {
+    state = state.where((h) => h.id != id).toList(growable: false);
+    _saveHabitList();
+    // Also remove all completion logs for this habit
+    if (_prefs != null) {
+      final keys = _prefs!.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('habit_log_$id')) {
+          _prefs!.remove(key);
+        }
+      }
+    }
+  }
+
+  void renameHabit(String id, String newName) {
+    state = state
+        .map((h) => h.id == id ? h.copyWith(name: newName.trim()) : h)
+        .toList(growable: false);
+    _saveHabitList();
+  }
+
+  void updateIcon(String id, int iconCodePoint) {
+    state = state
+        .map((h) => h.id == id ? h.copyWith(iconCodePoint: iconCodePoint) : h)
+        .toList(growable: false);
+    _saveHabitList();
+  }
 }
 
 final habitListProvider = StateNotifierProvider<HabitListNotifier, List<Habit>>(
