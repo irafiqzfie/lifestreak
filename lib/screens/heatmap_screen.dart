@@ -39,41 +39,33 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   Widget build(BuildContext context) {
     // Show loading indicator while prefs are loading
     if (_prefs == null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3f6a4a)),
-          ),
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3f6a4a)),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTimeframeSelector(),
-                    _buildTitle(),
-                    _buildDateRange(),
-                    _buildHeatmap(),
-                    _buildLegend(),
-                    _buildStatsCards(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTimeframeSelector(),
+                _buildTitle(),
+                _buildDateRange(),
+                _buildHeatmap(),
+                _buildLegend(),
+                _buildStatsCards(),
+                const SizedBox(height: 24),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -93,20 +85,15 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildIconButton(Icons.arrow_back, () => Navigator.pop(context)),
-            Text(
-              'Your Lifestreak',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-              ),
+        child: Center(
+          child: Text(
+            'Your Lifestreak',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
             ),
-            _buildIconButton(Icons.more_horiz, () {}),
-          ],
+          ),
         ),
       ),
     );
@@ -127,12 +114,13 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildTimeframeSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(4),
@@ -149,6 +137,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildTimeframeOption(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = _selectedTimeframe == label;
     return Expanded(
       child: GestureDetector(
@@ -158,12 +147,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         }),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected 
+                ? (isDark ? AppColors.darkCard : Colors.white)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -177,8 +168,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: isSelected
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFF64748B),
+                    ? (isDark ? AppColors.textPrimary : const Color(0xFF0F172A))
+                    : (isDark ? AppColors.textMuted : const Color(0xFF64748B)),
               ),
             ),
           ),
@@ -607,10 +598,16 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                           final cellIndex = col * rows + row;
                           return Padding(
                             padding: EdgeInsets.only(left: col == 0 ? 0 : gap),
-                            child: SizedBox(
-                              width: cellSize,
-                              height: cellSize,
-                              child: _buildHeatmapCellManual(cellIndex, days),
+                            child: GestureDetector(
+                              onLongPress: () {
+                                final date = _getDateForCellIndex(cellIndex, days);
+                                _handleLongPress(date);
+                              },
+                              child: SizedBox(
+                                width: cellSize,
+                                height: cellSize,
+                                child: _buildHeatmapCellManual(cellIndex, days),
+                              ),
                             ),
                           );
                         }),
@@ -1101,28 +1098,21 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Keep the row centered as a single unit, but ensure there is always
-          // breathing room from screen edges.
-          final available = math.max(0.0, constraints.maxWidth - 32);
+          final available = math.max(0.0, constraints.maxWidth - 48); // Equal outer margins
           final groupWidth = math.min(targetGroupWidth, available);
-
-          // If we have to shrink, shrink the card widths equally (still fixed
-          // and identical within the row).
           final cardWidth = (groupWidth - gap * 2) / 3;
 
           return Center(
             child: SizedBox(
               width: groupWidth,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(width: cardWidth, child: _buildStreakCard()),
+                  Expanded(child: _buildStreakCard()),
                   const SizedBox(width: gap),
-                  SizedBox(width: cardWidth, child: _buildConsistencyCard()),
+                  Expanded(child: _buildConsistencyCard()),
                   const SizedBox(width: gap),
-                  SizedBox(
-                    width: cardWidth,
-                    child: _buildPerfectDaysCard(count: ''),
-                  ),
+                  Expanded(child: _buildPerfectDaysCard(count: '')),
                 ],
               ),
             ),
@@ -1136,17 +1126,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final streakDays = _calculateCurrentStreak();
 
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1184,8 +1167,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1230,17 +1212,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final consistency = _calculateConsistency();
 
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1278,8 +1253,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1322,17 +1296,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perfectDays = _calculatePerfectDays();
 
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1370,8 +1337,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1423,5 +1389,245 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     }
 
     return perfectCount;
+  }
+
+  DateTime _getDateForCellIndex(int index, int totalDays) {
+    if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
+      final now = DateTime.now();
+      final daysBack = totalDays - 1 - index;
+      return DateTime(now.year, now.month, now.day).subtract(Duration(days: daysBack));
+    }
+    return _getDateForIndex(index);
+  }
+
+  void _handleLongPress(DateTime date) {
+    final now = DateTime.now();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final todayOnly = DateTime(now.year, now.month, now.day);
+
+    // Don't allow future dates
+    if (dateOnly.isAfter(todayOnly)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You can only log past or current days.',
+            style: GoogleFonts.plusJakartaSans(),
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFF6B7280),
+        ),
+      );
+      return;
+    }
+
+    _showPastDateLoggingSheet(date);
+  }
+
+  void _showPastDateLoggingSheet(DateTime date) {
+    final dateKey = _formatDateKey(date);
+    final habits = ref.read(habitListProvider.notifier).getHabitsForDate(dateKey);
+    
+    // Local state for the sheet
+    final habitStates = Map<String, bool>.fromEntries(
+      habits.map((h) => MapEntry(h.id, h.completed)),
+    );
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+              left: 24,
+              right: 24,
+              top: 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Log habits for ${_formatDisplayDate(date)}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (habits.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'No habits to log for this date',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  )
+                else
+                  ...habits.map((habit) {
+                    final isCompleted = habitStates[habit.id] ?? false;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            habitStates[habit.id] = !isCompleted;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.darkCard : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isCompleted
+                                  ? const Color(0xFF3f6a4a).withOpacity(0.3)
+                                  : (isDark ? AppColors.darkDivider : const Color(0xFFF1F3F2)),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: isCompleted
+                                      ? const Color(0xFF3f6a4a).withOpacity(0.1)
+                                      : (isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  habit.iconCodePoint != null
+                                      ? IconData(habit.iconCodePoint!,
+                                          fontFamily: 'MaterialIcons')
+                                      : Icons.check_circle_outline,
+                                  color: isCompleted
+                                      ? const Color(0xFF3f6a4a)
+                                      : (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF)),
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  habit.name,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? AppColors.textPrimary : const Color(0xFF1F2937),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: isCompleted
+                                      ? const Color(0xFF3f6a4a)
+                                      : Colors.transparent,
+                                  shape: BoxShape.circle,
+                                  border: isCompleted
+                                      ? null
+                                      : Border.all(
+                                          color: isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB), width: 2),
+                                ),
+                                child: isCompleted
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 20,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Save all changes
+                        for (final habit in habits) {
+                          final shouldBeCompleted = habitStates[habit.id] ?? false;
+                          final currentlyCompleted = habit.completed;
+                          
+                          if (shouldBeCompleted != currentlyCompleted) {
+                            ref.read(habitListProvider.notifier).toggleForDate(
+                              habit.id,
+                              dateKey,
+                            );
+                          }
+                        }
+                        
+                        // Refresh heatmap
+                        setState(() {
+                          _intensityCache = {};
+                        });
+                        
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3f6a4a),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Save',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatDisplayDate(DateTime date) {
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }

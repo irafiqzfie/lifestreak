@@ -10,15 +10,33 @@ import '../utils/app_colors.dart';
 import '../utils/scoring_logic.dart';
 
 class HabitLoggerScreen extends ConsumerStatefulWidget {
-  const HabitLoggerScreen({super.key});
+  final Function(VoidCallback)? onRegisterAddCallback;
+  
+  const HabitLoggerScreen({super.key, this.onRegisterAddCallback});
 
   @override
   ConsumerState<HabitLoggerScreen> createState() => _HabitLoggerScreenState();
+  
+  static _HabitLoggerScreenState? of(BuildContext context) {
+    return context.findAncestorStateOfType<_HabitLoggerScreenState>();
+  }
 }
 
 class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
-  int _selectedNavIndex = 0;
   bool _isEditMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Register the callback with the parent
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onRegisterAddCallback?.call(showCreateHabitSheet);
+    });
+  }
+
+  void showCreateHabitSheet() {
+    _showCreateHabitSheet(context);
+  }
 
   IconData _getHabitIcon(String habitName) {
     final nameLower = habitName.toLowerCase();
@@ -52,31 +70,24 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
       if (previous != next) ref.read(syncServiceProvider).syncHabitLogs();
     });
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(username),
-            if (kDebugMode) _buildSyncStatusIndicator(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    _buildDailyScoreCard(completedCount, totalCount, progress),
-                    const SizedBox(height: 24),
-                    _buildHabitsSection(habits),
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
+    return Column(
+      children: [
+        _buildHeader(username),
+        if (kDebugMode) _buildSyncStatusIndicator(),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                _buildDailyScoreCard(completedCount, totalCount, progress),
+                const SizedBox(height: 24),
+                _buildHabitsSection(habits),
+                const SizedBox(height: 100),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-      floatingActionButton: _buildFAB(),
-      bottomNavigationBar: _buildBottomNav(),
+      ],
     );
   }
 
@@ -232,12 +243,12 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: isDark ? AppColors.darkCard : const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F3F2)),
+          border: Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFF1F3F2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -254,7 +265,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B7280),
+                    color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
                   ),
                 ),
                 Text(
@@ -433,12 +444,12 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCompleted
               ? const Color(0xFF3f6a4a).withOpacity(0.3)
-              : const Color(0xFFF1F3F2),
+              : (isDark ? AppColors.darkDivider : const Color(0xFFF1F3F2)),
         ),
         boxShadow: [
           BoxShadow(
@@ -470,14 +481,14 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                         ],
                       )
                     : null,
-                color: !isCompleted ? const Color(0xFFF8F9FA) : null,
+                color: !isCompleted ? (isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA)) : null,
                 borderRadius: BorderRadius.circular(13),
                 border: Border.all(
                   color: isEditMode
                       ? const Color(0xFF3f6a4a)
                       : (isCompleted
                           ? const Color(0xFF3f6a4a).withOpacity(0.3)
-                          : const Color(0xFFE5E7EB)),
+                          : (isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB))),
                   width: isEditMode ? 2 : 1.5,
                 ),
                 boxShadow: isCompleted ? [
@@ -566,7 +577,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                         decoration: BoxDecoration(
                           color: streakPattern[i]
                               ? const Color(0xFF3f6a4a)
-                              : const Color(0xFFD1D5DB),
+                              : (isDark ? AppColors.darkDivider : const Color(0xFFD1D5DB)),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -696,69 +707,6 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     );
   }
 
-  Widget _buildBottomNav() => Container(
-    height: 80,
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.9),
-      border: const Border(top: BorderSide(color: Color(0xFFF1F3F2), width: 1)),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.02),
-          blurRadius: 10,
-          offset: const Offset(0, -5),
-        ),
-      ],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildNavItem(Icons.home, 'Home', 0, null),
-        _buildNavItem(Icons.bar_chart, 'Stats', 1, '/heatmap'),
-        _buildNavItem(Icons.groups, 'Friends', 2, '/friends'),
-        _buildNavItem(Icons.settings, 'Settings', 3, '/settings'),
-      ],
-    ),
-  );
-
-  Widget _buildNavItem(IconData icon, String label, int index, String? route) {
-    final isSelected = _selectedNavIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (route != null && !isSelected) {
-          Navigator.pushNamed(context, route);
-        } else {
-          setState(() => _selectedNavIndex = index);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? const Color(0xFF3f6a4a)
-                  : const Color(0xFF9CA3AF),
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: isSelected
-                    ? const Color(0xFF3f6a4a)
-                    : const Color(0xFF9CA3AF),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showCreateHabitSheet(BuildContext context) {
     final controller = TextEditingController();
     IconData selectedIcon = Icons.check_circle_outline;
@@ -780,6 +728,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
         ),
         child: StatefulBuilder(
           builder: (context, setState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +738,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF111827),
                 ),
               ),
               const SizedBox(height: 20),
@@ -802,8 +751,8 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                     }),
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      width: 64,
-                      height: 64,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -816,7 +765,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: const Color(0xFF3f6a4a).withOpacity(0.4),
-                          width: 2,
+                          width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -832,12 +781,12 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                             child: Icon(
                               selectedIcon,
                               color: const Color(0xFF3f6a4a),
-                              size: 32,
+                              size: 28,
                             ),
                           ),
                           Positioned(
-                            right: 4,
-                            bottom: 4,
+                            right: 3,
+                            bottom: 3,
                             child: Container(
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
@@ -853,7 +802,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                               child: const Icon(
                                 Icons.edit,
                                 color: Colors.white,
-                                size: 10,
+                                size: 9,
                               ),
                             ),
                           ),
@@ -863,57 +812,90 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: TextField(
-                      controller: controller,
-                      autofocus: true,
-                      maxLines: 1,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Habit name',
-                        labelStyle: GoogleFonts.plusJakartaSans(
-                          color: const Color(0xFF6B7280),
+                    child: SizedBox(
+                      height: 56,
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        maxLines: 1,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textPrimary : const Color(0xFF111827),
                         ),
-                        hintText: 'e.g., Meditate 10 mins',
-                        hintStyle: GoogleFonts.plusJakartaSans(
-                          color: const Color(0xFF9CA3AF),
-                        ),
-                        errorText: errorMessage,
-                        errorStyle: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: const Color(0xFFEF4444),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF3f6a4a),
-                            width: 2,
+                        decoration: InputDecoration(
+                          labelText: 'Habit name',
+                          labelStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                          ),
+                          floatingLabelStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.textSecondary : const Color(0xFF3f6a4a),
+                          ),
+                          hintText: 'e.g., Meditate 10 mins',
+                          hintStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            color: isDark ? AppColors.textMuted : const Color(0xFF9CA3AF),
+                          ),
+                          errorText: errorMessage,
+                          errorStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: const Color(0xFFEF4444),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB),
+                              width: 1.5,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB),
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF3f6a4a),
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFEF4444),
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFEF4444),
+                              width: 2,
+                            ),
                           ),
                         ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFEF4444)),
-                        ),
+                        onChanged: (v) {
+                          setState(() {
+                            errorMessage = null;
+                          });
+                        },
+                        onSubmitted: (v) {
+                          if (v.trim().isEmpty) {
+                            setState(() => errorMessage = 'Please enter a habit name.');
+                            return;
+                          }
+                          ref.read(habitListProvider.notifier).addHabit(v.trim(), iconCodePoint: selectedIcon.codePoint);
+                          Navigator.pop(context);
+                        },
                       ),
-                      onChanged: (v) {
-                        setState(() {
-                          errorMessage = null;
-                        });
-                      },
-                      onSubmitted: (v) {
-                        if (v.trim().isEmpty) {
-                          setState(() => errorMessage = 'Please enter a habit name.');
-                          return;
-                        }
-                        ref.read(habitListProvider.notifier).addHabit(v.trim(), iconCodePoint: selectedIcon.codePoint);
-                        Navigator.pop(context);
-                      },
                     ),
                   ),
                 ],
@@ -929,7 +911,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6B7280),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
                       ),
                     ),
                   ),

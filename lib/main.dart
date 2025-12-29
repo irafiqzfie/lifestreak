@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth_gate.dart';
-import 'screens/friends_screen.dart';
-import 'screens/heatmap_screen.dart';
-import 'screens/habit_logger_screen.dart';
-import 'screens/settings_screen.dart';
 import 'utils/app_colors.dart';
 
 void main() {
@@ -59,7 +55,6 @@ class MyApp extends ConsumerWidget {
         colorScheme: ColorScheme.dark(
           primary: AppColors.greenPrimary,
           surface: AppColors.darkCard,
-          background: AppColors.darkBackground,
         ),
         scaffoldBackgroundColor: AppColors.darkBackground,
         cardColor: AppColors.darkCard,
@@ -85,12 +80,6 @@ class MyApp extends ConsumerWidget {
         iconTheme: const IconThemeData(color: AppColors.textSecondary),
       ),
       home: const AuthGate(),
-      routes: {
-        '/friends': (context) => const FriendsScreen(),
-        '/heatmap': (context) => const HeatmapScreen(),
-        '/habits': (context) => const HabitLoggerScreen(),
-        '/settings': (context) => const SettingsScreen(),
-      },
     );
   }
 }

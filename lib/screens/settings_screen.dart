@@ -110,41 +110,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFf5f5f5),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 24),
-                      _buildAccountSection(),
-                      const SizedBox(height: 32),
-                      _buildPreferencesSection(),
-                      const SizedBox(height: 32),
-                      _buildPrivacySection(),
-                      const SizedBox(height: 32),
-                      _buildLegalSupportSection(),
-                      const SizedBox(height: 32),
-                      _buildDeleteAccountSection(),
-                      const SizedBox(height: 32),
-                      _buildVersionInfo(),
-                    ],
-                  ),
-                ),
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  _buildAccountSection(),
+                  const SizedBox(height: 32),
+                  _buildPreferencesSection(),
+                  const SizedBox(height: 32),
+                  _buildPrivacySection(),
+                  const SizedBox(height: 32),
+                  _buildLegalSupportSection(),
+                  const SizedBox(height: 32),
+                  _buildDeleteAccountSection(),
+                  const SizedBox(height: 32),
+                  _buildVersionInfo(),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -164,33 +157,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            InkWell(
-              onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.arrow_back,
-                  color: isDark ? Colors.white : const Color(0xFF0D1B13),
-                  size: 24,
-                ),
-              ),
+        child: Center(
+          child: Text(
+            'Settings',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF0D1B13),
             ),
-            Text(
-              'Settings',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF0D1B13),
-              ),
-            ),
-            const SizedBox(width: 40),
-          ],
+          ),
         ),
       ),
     );

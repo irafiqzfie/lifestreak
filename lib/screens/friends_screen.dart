@@ -123,41 +123,36 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Stack(
+    return Stack(
+      children: [
+        Column(
           children: [
-            Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildPrivacyBanner(),
-                          const SizedBox(height: 32),
-                          _buildPendingRequestsSection(),
-                          const SizedBox(height: 32),
-                          _buildFriendsListSection(),
-                          // TODO: Uncomment for post-launch update
-                          // const SizedBox(height: 16),
-                          // _buildInviteLinkButton(),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                    ),
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPrivacyBanner(),
+                      const SizedBox(height: 32),
+                      _buildPendingRequestsSection(),
+                      const SizedBox(height: 32),
+                      _buildFriendsListSection(),
+                      // TODO: Uncomment for post-launch update
+                      // const SizedBox(height: 16),
+                      // _buildInviteLinkButton(),
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-            _buildFloatingAddButton(),
           ],
         ),
-      ),
+        _buildFloatingAddButton(),
+      ],
     );
   }
 
@@ -174,20 +169,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildIconButton(Icons.arrow_back, () => Navigator.pop(context)),
-            Text(
-              'Friends',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-              ),
+        child: Center(
+          child: Text(
+            'Friends',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
             ),
-            const SizedBox(width: 40), // Spacer for alignment
-          ],
+          ),
         ),
       ),
     );
@@ -208,10 +198,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Widget _buildPrivacyBanner() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+        color: isDark ? const Color(0xFF3f6a4a).withOpacity(0.15) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF3f6a4a).withOpacity(0.2)),
       ),
@@ -224,7 +215,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               'Friends can see your overall progress and consistency. Individual habit details are not shared.',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
-                color: const Color(0xFF064E3B),
+                color: isDark ? AppColors.textSecondary : const Color(0xFF064E3B),
                 height: 1.4,
               ),
             ),
@@ -256,9 +247,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFE2E8F0)),
                 ),
                 child: TextField(
                   controller: _emailController,
@@ -453,8 +444,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       ? null
                       : _handleRejectRequest,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF475569),
-                    backgroundColor: const Color(0xFFF8FAFC),
+                    foregroundColor: isDark ? AppColors.textSecondary : const Color(0xFF475569),
+                    backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -462,13 +453,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     side: BorderSide.none,
                   ),
                   child: _isRejecting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFF475569),
+                              isDark ? AppColors.textSecondary : const Color(0xFF475569),
                             ),
                           ),
                         )
@@ -529,7 +520,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFF1F5F9)),
       ),
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -543,7 +534,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               ),
               child: CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFE2E8F0),
+                backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFE2E8F0),
                 child: Text(
                   'JT',
                   style: GoogleFonts.plusJakartaSans(
@@ -577,7 +568,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -608,17 +599,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               child: _isCanceling
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF94A3B8),
+                          isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
                         ),
                       ),
                     )
-                  : const Icon(Icons.close, color: Color(0xFF94A3B8), size: 20),
+                  : Icon(Icons.close, color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8), size: 20),
             ),
           ),
         ],
@@ -657,7 +648,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
+            border: Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFF1F5F9)),
           ),
           child: Column(
             children: [
@@ -689,7 +680,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Widget _buildDivider() {
-    return Container(height: 1, color: const Color(0xFFF1F5F9));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(height: 1, color: isDark ? AppColors.darkDivider : const Color(0xFFF1F5F9));
   }
 
   Widget _buildFriendItem({
@@ -735,8 +727,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : Colors.white,
                         shape: BoxShape.circle,
                       ),
                       child: Container(
@@ -775,7 +767,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 24),
+            Icon(Icons.chevron_right, color: isDark ? AppColors.darkDivider : const Color(0xFFCBD5E1), size: 24),
           ],
         ),
       ),
@@ -883,10 +875,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+        builder: (context, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
@@ -907,13 +901,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close),
-                      color: const Color(0xFF64748B),
+                      color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                     ),
                   ],
                 ),
@@ -922,16 +916,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   'Add friends via email to compare progress and stay accountable together.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 24),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: isDark ? AppColors.darkDivider : const Color(0xFFE2E8F0)),
                   ),
                   child: TextField(
                     controller: _addFriendEmailController,
@@ -947,11 +941,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       hintText: "Friend's email address",
                       hintStyle: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
-                        color: const Color(0xFF94A3B8),
+                        color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.alternate_email,
-                        color: Color(0xFF94A3B8),
+                        color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
                         size: 20,
                       ),
                       border: InputBorder.none,
@@ -962,7 +956,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
-                      color: const Color(0xFF0F172A),
+                      color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                     ),
                   ),
                 ),
@@ -1048,7 +1042,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
               ],
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }

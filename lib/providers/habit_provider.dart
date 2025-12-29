@@ -73,24 +73,35 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
 
   void toggle(String id) {
     final today = _getTodayString();
+    toggleForDate(id, today);
+  }
 
-    state = state
-        .map((h) {
-          if (h.id == id) {
-            final newCompleted = !h.completed;
-            // Persist immediately
-            if (_prefs != null) {
-              if (newCompleted) {
-                _prefs!.setBool(_storageKey(id, today), true);
-              } else {
-                _prefs!.remove(_storageKey(id, today));
-              }
+  void toggleForDate(String id, String date) {
+    // Load current state for the given date
+    final currentCompleted = _prefs?.getBool(_storageKey(id, date)) ?? false;
+    final newCompleted = !currentCompleted;
+    
+    // Persist immediately
+    if (_prefs != null) {
+      if (newCompleted) {
+        _prefs!.setBool(_storageKey(id, date), true);
+      } else {
+        _prefs!.remove(_storageKey(id, date));
+      }
+    }
+
+    // If toggling today's date, update state to reflect UI
+    final today = _getTodayString();
+    if (date == today) {
+      state = state
+          .map((h) {
+            if (h.id == id) {
+              return h.copyWith(completed: newCompleted);
             }
-            return h.copyWith(completed: newCompleted);
-          }
-          return h;
-        })
-        .toList(growable: false);
+            return h;
+          })
+          .toList(growable: false);
+    }
   }
 
   List<Map<String, dynamic>>? _tryDecodeJsonList(String s) {
@@ -152,6 +163,17 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
         .map((h) => h.id == id ? h.copyWith(iconCodePoint: iconCodePoint) : h)
         .toList(growable: false);
     _saveHabitList();
+  }
+
+  bool isCompletedOnDate(String habitId, String date) {
+    return _prefs?.getBool(_storageKey(habitId, date)) ?? false;
+  }
+
+  List<Habit> getHabitsForDate(String date) {
+    return state.map((h) {
+      final completed = isCompletedOnDate(h.id, date);
+      return h.copyWith(completed: completed);
+    }).toList(growable: false);
   }
 }
 

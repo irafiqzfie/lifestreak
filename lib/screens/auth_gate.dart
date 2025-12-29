@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/sync_provider.dart';
 import 'auth_screen.dart';
-import 'habit_logger_screen.dart';
+import 'main_navigation.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -25,7 +25,7 @@ class AuthGate extends ConsumerWidget {
     }
 
     if (authState.status == AuthStatus.authenticated) {
-      return const HabitLoggerScreen();
+      return const MainNavigation();
     }
 
     return const AuthScreen();
