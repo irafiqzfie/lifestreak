@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/habit_provider.dart';
+import '../utils/app_colors.dart';
+import '../utils/scoring_logic.dart';
 
 class HeatmapScreen extends ConsumerStatefulWidget {
   const HeatmapScreen({super.key});
@@ -37,9 +39,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   Widget build(BuildContext context) {
     // Show loading indicator while prefs are loading
     if (_prefs == null) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3f6a4a)),
           ),
@@ -48,7 +50,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -76,11 +78,17 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        color: isDark
+            ? AppColors.darkBackground
+            : Colors.white.withOpacity(0.95),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkDivider : const Color(0xFFE2E8F0),
+            width: 0,
+          ),
         ),
       ),
       child: Padding(
@@ -94,7 +102,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
+                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
               ),
             ),
             _buildIconButton(Icons.more_horiz, () {}),
@@ -105,6 +113,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildIconButton(IconData icon, VoidCallback onPressed) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(20),
@@ -112,7 +121,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-        child: Icon(icon, color: const Color(0xFF0F172A), size: 24),
+        child: Icon(icon, color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A), size: 24),
       ),
     );
   }
@@ -179,19 +188,34 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildTitle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final aggregated = _calculateAggregatedScore();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          _getTitleText(),
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF0F172A),
-            height: 1.2,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            _getTitleText(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+              height: 1.2,
+            ),
           ),
-        ),
+          Text(
+            'Score: ${aggregated.score}',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF3f6a4a),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -225,13 +249,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildDateRange() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       child: Text(
         _getDateRangeText(),
         style: GoogleFonts.plusJakartaSans(
           fontSize: 14,
-          color: const Color(0xFF64748B),
+          color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
         ),
       ),
     );
@@ -364,6 +389,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               final day = index - firstWeekday + 2;
               final intensity = _getMonthDayIntensity(day);
 
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               return Container(
                 decoration: BoxDecoration(
                   color: _getColorForIntensity(intensity),
@@ -376,8 +402,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: intensity == 0.0
-                          ? const Color(0xFF94A3B8)
-                          : const Color(0xFF0a160f),
+                          ? (isDark ? AppColors.textMuted : const Color(0xFF94A3B8))
+                          : (isDark ? AppColors.textPrimary : const Color(0xFF0a160f)),
                     ),
                   ),
                 ),
@@ -434,7 +460,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF94A3B8),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textSecondary
+                              : const Color(0xFF94A3B8),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -514,6 +542,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final month1 = months[start.month - 1];
     final month2 = months[(start.month % 12)];
     final month3 = months[now.month - 1];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(left: 40),
@@ -524,21 +553,21 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             month1,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF94A3B8),
             ),
           ),
           Text(
             month2,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF94A3B8),
             ),
           ),
           Text(
             month3,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF94A3B8),
             ),
           ),
         ],
@@ -651,7 +680,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF94A3B8),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSecondary
+                            : const Color(0xFF94A3B8),
                       ),
                     ),
                   );
@@ -750,6 +781,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildDayLabels() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? AppColors.textSecondary : const Color(0xFF94A3B8);
+    
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,7 +793,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF94A3B8),
+            color: labelColor,
           ),
         ),
         Text(
@@ -767,7 +801,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF94A3B8),
+            color: labelColor,
           ),
         ),
         Text(
@@ -775,7 +809,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF94A3B8),
+            color: labelColor,
           ),
         ),
         Text(
@@ -783,7 +817,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF94A3B8),
+            color: labelColor,
           ),
         ),
       ],
@@ -923,33 +957,95 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       }
     }
 
-    // Intensity = completed / total (PRD formula)
-    return habits.isEmpty ? 0.0 : completedCount / habits.length;
+    // Calculate score (0-3) and convert to intensity (0.0-1.0) for coloring
+    final score = calculateDailyScore(
+      completedHabits: completedCount,
+      totalHabits: habits.length,
+    );
+
+    // Map score to intensity: 0→0.0, 1→0.33, 2→0.66, 3→1.0
+    return score / 3.0;
+  }
+
+  /// Calculates aggregated score for the current timeframe
+  ({int score, int maxScore}) _calculateAggregatedScore() {
+    if (_prefs == null) return (score: 0, maxScore: 0);
+
+    final habits = ref.read(habitListProvider);
+    final now = DateTime.now();
+    final List<int> dailyScores = [];
+
+    int days;
+    DateTime startDate;
+
+    switch (_selectedTimeframe) {
+      case 'Week':
+        days = 7;
+        startDate = now.subtract(const Duration(days: 6));
+        break;
+      case 'Month':
+        days = DateTime(now.year, now.month + 1, 0).day;
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case 'Year':
+        days = 365;
+        startDate = DateTime(now.year, 1, 1);
+        break;
+      default: // Quarter
+        days = 90;
+        startDate = now.subtract(const Duration(days: 89));
+    }
+
+    // Calculate daily scores for the range
+    for (int i = 0; i < days; i++) {
+      final date = startDate.add(Duration(days: i));
+
+      // Don't include future dates
+      if (date.isAfter(now)) break;
+
+      final dateKey = _formatDateKey(date);
+      int completedCount = 0;
+
+      for (final habit in habits) {
+        final logKey = 'habit_log_${habit.id}_$dateKey';
+        if (_prefs!.getBool(logKey) == true) {
+          completedCount++;
+        }
+      }
+
+      final score = calculateDailyScore(
+        completedHabits: completedCount,
+        totalHabits: habits.length,
+      );
+      dailyScores.add(score);
+    }
+
+    return aggregateScores(dailyScores);
   }
 
   Color _getColorForIntensity(double intensity) {
     if (intensity == -1) return Colors.transparent; // Future cell
     if (intensity == -2) return Colors.transparent; // Today cell
-    if (intensity == 0.0) return const Color(0xFFF1F5F9);
 
-    // Muted forest green scale - consistent with app-wide design
-    // Base: #3f6a4a (muted forest green from sign-in screen)
-    const baseGreen = Color(0xFF3f6a4a);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (intensity < 0.25) {
-      return baseGreen.withOpacity(0.2);
-    } else if (intensity < 0.5) {
-      return baseGreen.withOpacity(0.4);
-    } else if (intensity < 0.75) {
-      return baseGreen.withOpacity(0.6);
-    } else if (intensity < 1.0) {
-      return baseGreen.withOpacity(0.8);
+    // Map intensity to score (0.0, 0.33, 0.66, 1.0 → 0, 1, 2, 3)
+    int score;
+    if (intensity == 0.0) {
+      score = 0;
+    } else if (intensity <= 0.33) {
+      score = 1;
+    } else if (intensity <= 0.66) {
+      score = 2;
     } else {
-      return baseGreen; // Perfect day - solid but not glowing
+      score = 3;
     }
+
+    return AppColors.heatmapColor(score, isDark);
   }
 
   Widget _buildLegend() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
@@ -960,24 +1056,24 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
             ),
           ),
           const SizedBox(width: 8),
-          _buildLegendBox(const Color(0xFFF1F5F9)),
+          _buildLegendBox(AppColors.heatmapColor(0, isDark)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF3f6a4a).withOpacity(0.3)),
+          _buildLegendBox(AppColors.heatmapColor(1, isDark)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF3f6a4a).withOpacity(0.6)),
+          _buildLegendBox(AppColors.heatmapColor(2, isDark)),
           const SizedBox(width: 4),
-          _buildLegendBox(const Color(0xFF3f6a4a)),
+          _buildLegendBox(AppColors.heatmapColor(3, isDark)),
           const SizedBox(width: 8),
           Text(
             'More',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF94A3B8),
+              color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
             ),
           ),
         ],
@@ -1037,13 +1133,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildStreakCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final streakDays = _calculateCurrentStreak();
 
     return Container(
       height: 120,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1059,7 +1156,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
@@ -1080,7 +1177,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
               letterSpacing: 0.2,
             ),
             textAlign: TextAlign.center,
@@ -1130,13 +1227,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildConsistencyCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final consistency = _calculateConsistency();
 
     return Container(
       height: 120,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1152,7 +1250,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
@@ -1173,7 +1271,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
               letterSpacing: 0.2,
             ),
             textAlign: TextAlign.center,
@@ -1221,13 +1319,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildPerfectDaysCard({required String count}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final perfectDays = _calculatePerfectDays();
 
     return Container(
       height: 120,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1243,7 +1342,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
@@ -1264,7 +1363,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
               letterSpacing: 0.2,
             ),
             textAlign: TextAlign.center,

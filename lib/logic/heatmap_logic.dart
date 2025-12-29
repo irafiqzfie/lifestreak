@@ -1,10 +1,21 @@
 import 'package:lifestreak/providers/habit_provider.dart';
+import '../utils/scoring_logic.dart';
 
 class HeatmapDay {
   final DateTime date;
-  final int intensity;
+  final int score;
+  final int completedHabits;
+  final int totalHabits;
 
-  const HeatmapDay({required this.date, required this.intensity});
+  const HeatmapDay({
+    required this.date,
+    required this.score,
+    required this.completedHabits,
+    required this.totalHabits,
+  });
+
+  /// Legacy intensity getter for backwards compatibility
+  int get intensity => score;
 }
 
 List<HeatmapDay> computeHeatmapDays({
@@ -30,8 +41,18 @@ List<HeatmapDay> computeHeatmapDays({
       }
     }
 
-    final intensity = completed > 3 ? 3 : completed;
-    result.add(HeatmapDay(date: currentDate, intensity: intensity));
+    final totalHabits = habits.length;
+    final score = calculateDailyScore(
+      completedHabits: completed,
+      totalHabits: totalHabits,
+    );
+
+    result.add(HeatmapDay(
+      date: currentDate,
+      score: score,
+      completedHabits: completed,
+      totalHabits: totalHabits,
+    ));
   }
 
   return result;

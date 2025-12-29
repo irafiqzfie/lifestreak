@@ -6,7 +6,8 @@ import '../providers/auth_provider.dart';
 import '../providers/habit_provider.dart';
 import '../providers/sync_provider.dart';
 import '../services/sync_service.dart';
-import '../utils/mock_friends.dart';
+import '../utils/app_colors.dart';
+import '../utils/scoring_logic.dart';
 
 class HabitLoggerScreen extends ConsumerStatefulWidget {
   const HabitLoggerScreen({super.key});
@@ -20,16 +21,20 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
 
   IconData _getHabitIcon(String habitName) {
     final nameLower = habitName.toLowerCase();
-    if (nameLower.contains('water') || nameLower.contains('drink'))
+    if (nameLower.contains('water') || nameLower.contains('drink')) {
       return Icons.water_drop;
-    if (nameLower.contains('read') || nameLower.contains('book'))
+    }
+    if (nameLower.contains('read') || nameLower.contains('book')) {
       return Icons.menu_book;
+    }
     if (nameLower.contains('gym') ||
         nameLower.contains('workout') ||
-        nameLower.contains('exercise'))
+        nameLower.contains('exercise')) {
       return Icons.fitness_center;
-    if (nameLower.contains('meditate') || nameLower.contains('meditation'))
+    }
+    if (nameLower.contains('meditate') || nameLower.contains('meditation')) {
       return Icons.self_improvement;
+    }
     return Icons.check_circle_outline;
   }
 
@@ -47,7 +52,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -99,6 +104,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   );
 
   Widget _buildHeader(String username) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
     final greeting = now.hour < 12
         ? 'Good Morning'
@@ -129,7 +135,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF111827),
+                    color: isDark ? AppColors.textPrimary : const Color(0xFF111827),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -144,92 +150,41 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     );
   }
 
-  Widget _buildAvatar() => GestureDetector(
-    onTap: () => _showProfileMenu(context),
-    child: Stack(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
+  Widget _buildAvatar() => Stack(
+    children: [
+      Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF3f6a4a).withOpacity(0.3),
+            width: 2,
+          ),
+          color: const Color(0xFF3f6a4a).withOpacity(0.1),
+        ),
+        child: const Icon(Icons.person, color: Color(0xFF3f6a4a), size: 24),
+      ),
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Container(
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
+            color: const Color(0xFF3f6a4a),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFF3f6a4a).withOpacity(0.3),
-              width: 2,
-            ),
-            color: const Color(0xFF3f6a4a).withOpacity(0.1),
-          ),
-          child: const Icon(Icons.person, color: Color(0xFF3f6a4a), size: 24),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3f6a4a),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
+            border: Border.all(color: Colors.white, width: 2),
           ),
         ),
-      ],
-    ),
+      ),
+    ],
   );
 
   String _formatDate(DateTime d) =>
       '${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][d.weekday - 1]}, ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} ${d.day}';
 
-  void _showProfileMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (kDebugMode)
-              ListTile(
-                leading: const Icon(Icons.group_add),
-                title: const Text('Seed Mock Friends'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await seedMockFriends();
-                  if (context.mounted)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Mock friends added')),
-                    );
-                },
-              ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Friends'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.pushNamed(context, '/friends');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.grid_on),
-              title: const Text('Heatmap'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.pushNamed(context, '/heatmap');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                Navigator.pop(ctx);
-                ref.read(authProvider.notifier).logout();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Popup menu removed: actions are available via header/navigation.
 
   Widget _buildSyncStatusIndicator() {
     final syncService = ref.read(syncServiceProvider);
@@ -264,7 +219,13 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   }
 
   Widget _buildDailyScoreCard(int completed, int total, double progress) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dailyScore = calculateDailyScore(
+      completedHabits: completed,
+      totalHabits: total,
+    );
     final isPerfectDay = completed > 0 && completed == total;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -281,12 +242,11 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Today',
@@ -296,25 +256,31 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                     color: const Color(0xFF6B7280),
                   ),
                 ),
-                const SizedBox(height: 8),
+                Text(
+                  'Score: $dailyScore / 3',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF3f6a4a),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      'Completed ',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                    Text(
                       '$completed',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF111827),
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF111827),
                         height: 1,
                       ),
                     ),
@@ -323,55 +289,55 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF9CA3AF),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'habits completed',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF9CA3AF),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'habits',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF9CA3AF),
+                if (isPerfectDay)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3f6a4a).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF3f6a4a).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.verified,
+                          color: Color(0xFF3f6a4a),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Perfect Day',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF3f6a4a),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
-            if (isPerfectDay)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3f6a4a).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFF3f6a4a).withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.verified,
-                      color: Color(0xFF3f6a4a),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Perfect Day',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF3f6a4a),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
@@ -379,7 +345,8 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   }
 
   Widget _buildHabitsSection(List<Habit> habits) {
-    if (habits.isEmpty)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (habits.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(48),
         child: Column(
@@ -410,6 +377,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
           ],
         ),
       );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -422,7 +390,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF111827),
                 ),
               ),
               TextButton(
@@ -452,6 +420,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   }
 
   Widget _buildHabitCard(Habit habit) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = habit.completed;
     final hash = habit.name.hashCode.abs();
     final streakPattern = List.generate(5, (i) => (hash >> i) & 1 == 1);
@@ -486,10 +455,12 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              _getHabitIcon(habit.name),
+              habit.iconCodePoint != null 
+                  ? IconData(habit.iconCodePoint!, fontFamily: 'MaterialIcons')
+                  : _getHabitIcon(habit.name),
               color: isCompleted
                   ? const Color(0xFF3f6a4a)
-                  : const Color(0xFF9CA3AF),
+                  : (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF)),
               size: 28,
             ),
           ),
@@ -504,8 +475,8 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: isCompleted
-                        ? const Color(0xFF9CA3AF)
-                        : const Color(0xFF1F2937),
+                        ? (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF))
+                        : (isDark ? AppColors.textPrimary : const Color(0xFF1F2937)),
                     decoration: isCompleted ? TextDecoration.lineThrough : null,
                     decorationColor: const Color(0xFFD1D5DB),
                     decorationThickness: 2,
@@ -589,7 +560,7 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
       children: [
         _buildNavItem(Icons.home, 'Home', 0, null),
         _buildNavItem(Icons.bar_chart, 'Stats', 1, '/heatmap'),
-        _buildNavItem(Icons.groups, 'Social', 2, '/friends'),
+        _buildNavItem(Icons.groups, 'Friends', 2, '/friends'),
         _buildNavItem(Icons.settings, 'Settings', 3, '/settings'),
       ],
     ),
@@ -599,10 +570,11 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     final isSelected = _selectedNavIndex == index;
     return GestureDetector(
       onTap: () {
-        if (route != null && !isSelected)
+        if (route != null && !isSelected) {
           Navigator.pushNamed(context, route);
-        else
+        } else {
           setState(() => _selectedNavIndex = index);
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -635,11 +607,13 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
 
   void _showCreateHabitSheet(BuildContext context) {
     final controller = TextEditingController();
-    bool isValid = false;
+    IconData selectedIcon = Icons.check_circle_outline;
+    String? errorMessage;
+    
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -651,7 +625,8 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
           top: 24,
         ),
         child: StatefulBuilder(
-          builder: (context, setState) => Column(
+          builder: (context, setState) {
+            return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -664,41 +639,88 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 1,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Habit name',
-                  labelStyle: GoogleFonts.plusJakartaSans(
-                    color: const Color(0xFF6B7280),
-                  ),
-                  hintText: 'e.g., Meditate 10 mins',
-                  hintStyle: GoogleFonts.plusJakartaSans(
-                    color: const Color(0xFF9CA3AF),
-                  ),
-                  border: OutlineInputBorder(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () => _showIconPicker(context, (icon) {
+                      setState(() => selectedIcon = icon);
+                    }),
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF3f6a4a),
-                      width: 2,
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3f6a4a).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF3f6a4a).withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(
+                        selectedIcon,
+                        color: const Color(0xFF3f6a4a),
+                        size: 28,
+                      ),
                     ),
                   ),
-                ),
-                onChanged: (v) => setState(() => isValid = v.trim().isNotEmpty),
-                onSubmitted: (v) {
-                  if (v.trim().isEmpty) return;
-                  ref.read(habitListProvider.notifier).addHabit(v.trim());
-                  Navigator.pop(context);
-                },
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      autofocus: true,
+                      maxLines: 1,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Habit name',
+                        labelStyle: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF6B7280),
+                        ),
+                        hintText: 'e.g., Meditate 10 mins',
+                        hintStyle: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        errorText: errorMessage,
+                        errorStyle: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: const Color(0xFFEF4444),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF3f6a4a),
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                        ),
+                      ),
+                      onChanged: (v) {
+                        setState(() {
+                          errorMessage = null;
+                        });
+                      },
+                      onSubmitted: (v) {
+                        if (v.trim().isEmpty) {
+                          setState(() => errorMessage = 'Please enter a habit name.');
+                          return;
+                        }
+                        ref.read(habitListProvider.notifier).addHabit(v.trim(), iconCodePoint: selectedIcon.codePoint);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Row(
@@ -717,19 +739,19 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
-                    onPressed: isValid
-                        ? () {
-                            if (controller.text.trim().isEmpty) return;
-                            ref
-                                .read(habitListProvider.notifier)
-                                .addHabit(controller.text.trim());
-                            Navigator.pop(context);
-                          }
-                        : null,
+                    onPressed: () {
+                      if (controller.text.trim().isEmpty) {
+                        setState(() => errorMessage = 'Please enter a habit name.');
+                        return;
+                      }
+                      ref
+                          .read(habitListProvider.notifier)
+                          .addHabit(controller.text.trim(), iconCodePoint: selectedIcon.codePoint);
+                      Navigator.pop(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3f6a4a),
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE5E7EB),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -750,7 +772,106 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 ],
               ),
             ],
-          ),
+          );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showIconPicker(BuildContext context, Function(IconData) onIconSelected) {
+    final icons = [
+      Icons.check_circle_outline,
+      Icons.fitness_center,
+      Icons.self_improvement,
+      Icons.menu_book,
+      Icons.water_drop,
+      Icons.local_drink,
+      Icons.restaurant,
+      Icons.bedtime,
+      Icons.wb_sunny,
+      Icons.directions_run,
+      Icons.directions_walk,
+      Icons.directions_bike,
+      Icons.pool,
+      Icons.spa,
+      Icons.favorite_border,
+      Icons.healing,
+      Icons.psychology,
+      Icons.music_note,
+      Icons.brush,
+      Icons.edit_note,
+      Icons.laptop,
+      Icons.school,
+      Icons.work_outline,
+      Icons.home,
+      Icons.cleaning_services,
+      Icons.shopping_cart,
+      Icons.coffee,
+      Icons.local_cafe,
+      Icons.phone,
+      Icons.savings,
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Choose an Icon',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 280,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 6,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1,
+                ),
+                itemCount: icons.length,
+                itemBuilder: (context, index) {
+                  final icon = icons[index];
+                  return InkWell(
+                    onTap: () {
+                      onIconSelected(icon);
+                      Navigator.pop(ctx);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3f6a4a).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF3f6a4a).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: const Color(0xFF3f6a4a),
+                        size: 24,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,14 +10,16 @@ class Habit {
   final String id;
   final String name;
   final bool completed;
+  final int? iconCodePoint;
 
-  const Habit({required this.id, required this.name, this.completed = false});
+  const Habit({required this.id, required this.name, this.completed = false, this.iconCodePoint});
 
-  Habit copyWith({String? id, String? name, bool? completed}) {
+  Habit copyWith({String? id, String? name, bool? completed, int? iconCodePoint}) {
     return Habit(
       id: id ?? this.id,
       name: name ?? this.name,
       completed: completed ?? this.completed,
+      iconCodePoint: iconCodePoint ?? this.iconCodePoint,
     );
   }
 }
@@ -44,9 +46,10 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
               .map((m) {
                 final id = m['id'] as String? ?? '';
                 final name = m['name'] as String? ?? '';
+                final iconCodePoint = m['iconCodePoint'] as int?;
                 final completed =
                     _prefs?.getBool(_storageKey(id, today)) ?? false;
-                return Habit(id: id, name: name, completed: completed);
+                return Habit(id: id, name: name, completed: completed, iconCodePoint: iconCodePoint);
               })
               .toList(growable: false);
         }
@@ -104,7 +107,11 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
   Future<void> _saveHabitList() async {
     if (_prefs == null) return;
     final simple = state
-        .map((h) => {'id': h.id, 'name': h.name})
+        .map((h) => {
+          'id': h.id,
+          'name': h.name,
+          if (h.iconCodePoint != null) 'iconCodePoint': h.iconCodePoint,
+        })
         .toList(growable: false);
     try {
       final s = const JsonEncoder().convert(simple);
@@ -112,9 +119,9 @@ class HabitListNotifier extends StateNotifier<List<Habit>> {
     } catch (_) {}
   }
 
-  void addHabit(String name) {
+  void addHabit(String name, {int? iconCodePoint}) {
     final id = 'h_${DateTime.now().millisecondsSinceEpoch}';
-    final newHabit = Habit(id: id, name: name.trim(), completed: false);
+    final newHabit = Habit(id: id, name: name.trim(), completed: false, iconCodePoint: iconCodePoint);
     state = [...state, newHabit];
     _saveHabitList();
   }

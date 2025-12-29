@@ -18,7 +18,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('No habits yet. Tap + to create one.'), findsOneWidget);
+      expect(find.text('No habits yet'), findsOneWidget);
     });
 
     testWidgets('renders habit list when habits exist', (tester) async {
@@ -32,7 +32,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Morning stretch'), findsOneWidget);
-      expect(find.text('No habits yet. Tap + to create one.'), findsNothing);
+      expect(find.text('No habits yet'), findsNothing);
     });
 
     testWidgets('displays FloatingActionButton', (tester) async {
@@ -43,7 +43,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      // App uses a custom FAB, not FloatingActionButton widget
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 

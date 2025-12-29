@@ -54,7 +54,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final hasRequestId = authState.pendingRequestId != null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Stack(
           children: [

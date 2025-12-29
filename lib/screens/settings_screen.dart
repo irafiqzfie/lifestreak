@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
+import '../utils/app_colors.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  String selectedTheme = 'Light';
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String selectedStartOfWeek = 'Mon';
 
   void _showDeleteConfirmation() {
@@ -61,10 +66,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Log Out',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: GoogleFonts.plusJakartaSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF3f6a4a),
+            ),
+            child: Text(
+              'Log Out',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      await ref.read(authProvider.notifier).logout();
+
+      // Navigate to root and remove all routes to trigger AuthGate rebuild
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F7),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFf5f5f5),
       body: SafeArea(
         child: Column(
           children: [
@@ -100,11 +149,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8F7).withOpacity(0.95),
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+        color: isDark
+            ? AppColors.darkBackground
+            : const Color(0xFFF6F8F7).withOpacity(0.95),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB),
+            width: 0,
+          ),
         ),
       ),
       child: Padding(
@@ -119,9 +174,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 40,
                 height: 40,
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back,
-                  color: Color(0xFF0D1B13),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B13),
                   size: 24,
                 ),
               ),
@@ -131,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0D1B13),
+                color: isDark ? Colors.white : const Color(0xFF0D1B13),
               ),
             ),
             const SizedBox(width: 40),
@@ -157,6 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAccountSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,9 +220,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF3F4F6)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -195,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF0D1B13),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -215,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Container(height: 1, color: const Color(0xFFF3F4F6)),
               InkWell(
-                onTap: () {},
+                onTap: _handleLogout,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -223,9 +281,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.logout,
-                            color: Color(0xFF0D1B13),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -234,7 +292,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF0D1B13),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                         ],
@@ -256,6 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPreferencesSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -263,9 +324,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF3F4F6)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -283,9 +346,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.contrast,
-                          color: Color(0xFF0D1B13),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -294,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF0D1B13),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -304,7 +367,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              Container(height: 1, color: const Color(0xFFF3F4F6)),
+              Container(
+                height: 1,
+                color: isDark
+                    ? const Color(0xFF2D2D2D)
+                    : const Color(0xFFF3F4F6),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -312,9 +380,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today,
-                          color: Color(0xFF0D1B13),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -323,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF0D1B13),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -341,9 +409,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildThemeSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(4),
@@ -358,17 +427,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildThemeOption(String theme) {
-    final isSelected = selectedTheme == theme;
+    final themeMode = ref.watch(themeProvider);
+    final currentTheme = ref.read(themeProvider.notifier).currentThemeName;
+    final isSelected = currentTheme == theme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedTheme = theme;
-        });
+        ref.read(themeProvider.notifier).setTheme(theme);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected
+              ? (isDark ? const Color(0xFF2D2D2D) : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           boxShadow: isSelected
               ? [
@@ -387,7 +459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: isSelected
-                  ? const Color(0xFF0D1B13)
+                  ? (isDark ? Colors.white : const Color(0xFF0D1B13))
                   : const Color(0xFF6B7280),
             ),
           ),
@@ -397,9 +469,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildStartOfWeekSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(4),
@@ -414,6 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildStartOfWeekOption(String day) {
     final isSelected = selectedStartOfWeek == day;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -423,7 +497,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected
+              ? (isDark ? const Color(0xFF2D2D2D) : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           boxShadow: isSelected
               ? [
@@ -442,7 +518,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: isSelected
-                  ? const Color(0xFF0D1B13)
+                  ? (isDark ? Colors.white : const Color(0xFF0D1B13))
                   : const Color(0xFF6B7280),
             ),
           ),
@@ -452,6 +528,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPrivacySection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -459,9 +536,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF3F4F6)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -520,6 +599,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLegalSupportSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -527,9 +607,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF3F4F6)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFF3F4F6),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -543,21 +625,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildLegalItem(
                 icon: Icons.policy,
                 title: 'Privacy Policy',
-                trailingIcon: Icons.open_in_new,
-                onTap: () => _showPlaceholderDialog(
-                  'Privacy Policy',
-                  'Privacy policy content will be available in the production release.',
-                ),
+                trailingIcon: Icons.chevron_right,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                },
               ),
               Container(height: 1, color: const Color(0xFFF3F4F6)),
               _buildLegalItem(
                 icon: Icons.description,
                 title: 'Terms of Service',
-                trailingIcon: Icons.open_in_new,
-                onTap: () => _showPlaceholderDialog(
-                  'Terms of Service',
-                  'Terms of service will be available in the production release.',
-                ),
+                trailingIcon: Icons.chevron_right,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TermsOfServiceScreen(),
+                    ),
+                  );
+                },
               ),
               Container(height: 1, color: const Color(0xFFF3F4F6)),
               _buildLegalItem(
@@ -591,14 +681,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF0D1B13), size: 20),
+                Icon(
+                  icon,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   title,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF0D1B13),
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ],
@@ -611,12 +705,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDeleteAccountSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE4E6)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF5A2626) : const Color(0xFFFFE4E6),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),

@@ -26,7 +26,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(HeatmapScreen), findsOneWidget);
-      expect(find.text('Heatmap'), findsOneWidget);
+      expect(find.text('Your Lifestreak'), findsOneWidget);
     });
   });
 }

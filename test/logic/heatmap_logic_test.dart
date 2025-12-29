@@ -60,7 +60,7 @@ void main() {
       }
     });
 
-    test('one habit completed has intensity 1', () {
+    test('one habit completed has score 3 (all habits done)', () {
       final today = DateTime(2025, 12, 20);
       final habits = [const Habit(id: 'h1', name: 'Habit 1')];
       final logs = <String, bool>{'habit_log_h1_2025-12-20': true};
@@ -73,7 +73,9 @@ void main() {
       );
 
       final todayResult = result.last;
-      expect(todayResult.intensity, 1);
+      expect(todayResult.score, 3); // 1/1 = 100% = score 3
+      expect(todayResult.completedHabits, 1);
+      expect(todayResult.totalHabits, 1);
     });
 
     test('multiple habits same day with intensity capped at 3', () {
@@ -167,7 +169,7 @@ void main() {
       }
     });
 
-    test('two habits same day has intensity 2', () {
+    test('two habits same day has score 3 (all habits done)', () {
       final today = DateTime(2025, 12, 20);
       final habits = [
         const Habit(id: 'h1', name: 'Habit 1'),
@@ -186,7 +188,9 @@ void main() {
       );
 
       final todayResult = result.last;
-      expect(todayResult.intensity, 2);
+      expect(todayResult.score, 3); // 2/2 = 100% = score 3
+      expect(todayResult.completedHabits, 2);
+      expect(todayResult.totalHabits, 2);
     });
 
     test('first day equals today minus 89 days', () {
@@ -208,7 +212,7 @@ void main() {
     });
 
     test(
-      'completions on various days within range have correct intensities',
+      'completions on various days within range have correct scores',
       () {
         final today = DateTime(2025, 12, 20);
         final habits = [
@@ -235,17 +239,23 @@ void main() {
         final dec15 = result.firstWhere(
           (d) => d.date.month == 12 && d.date.day == 15,
         );
-        expect(dec15.intensity, 2);
+        expect(dec15.score, 2); // 2/3 = 66% > 50% = score 2
+        expect(dec15.completedHabits, 2);
+        expect(dec15.totalHabits, 3);
 
         final oct1 = result.firstWhere(
           (d) => d.date.month == 10 && d.date.day == 1,
         );
-        expect(oct1.intensity, 1);
+        expect(oct1.score, 1); // 1/3 = 33% < 50% = score 1
+        expect(oct1.completedHabits, 1);
+        expect(oct1.totalHabits, 3);
 
         final nov20 = result.firstWhere(
           (d) => d.date.month == 11 && d.date.day == 20,
         );
-        expect(nov20.intensity, 3);
+        expect(nov20.score, 3); // 3/3 = 100% = score 3
+        expect(nov20.completedHabits, 3);
+        expect(nov20.totalHabits, 3);
       },
     );
   });
