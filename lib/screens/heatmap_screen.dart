@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/habit_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/scoring_logic.dart';
 
@@ -335,6 +336,22 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final firstWeekday = firstDayOfMonth.weekday; // 1 = Monday, 7 = Sunday
+    
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+    
+    // Adjust the day labels based on start of week
+    final dayLabels = weekStartsOnSunday
+        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Calculate offset for empty cells
+    // If week starts on Sunday, weekday 7 (Sunday) should be 0
+    // If week starts on Monday, weekday 1 (Monday) should be 0
+    final offset = weekStartsOnSunday 
+        ? (firstWeekday == 7 ? 0 : firstWeekday)
+        : (firstWeekday - 1);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -342,7 +359,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         children: [
           // Day labels
           Row(
-            children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            children: dayLabels
                 .map(
                   (day) => Expanded(
                     child: Center(
@@ -370,14 +387,14 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               crossAxisSpacing: 8,
               childAspectRatio: 1,
             ),
-            itemCount: firstWeekday - 1 + daysInMonth,
+            itemCount: offset + daysInMonth,
             itemBuilder: (context, index) {
               // Empty cells before the 1st
-              if (index < firstWeekday - 1) {
+              if (index < offset) {
                 return const SizedBox();
               }
 
-              final day = index - firstWeekday + 2;
+              final day = index - offset + 1;
               final intensity = _getMonthDayIntensity(day);
 
               final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -422,8 +439,27 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildWeeklyBars() {
     final now = DateTime.now();
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final dates = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+    
+    final days = weekStartsOnSunday
+        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Calculate dates based on week start preference
+    final dates = List.generate(7, (i) {
+      if (weekStartsOnSunday) {
+        // For Sunday start: calculate from Sunday of current week
+        final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
+        final daysSinceSunday = todayWeekday == 7 ? 0 : todayWeekday;
+        return now.subtract(Duration(days: daysSinceSunday - i));
+      } else {
+        // For Monday start: calculate from Monday of current week (existing logic)
+        return now.subtract(Duration(days: 6 - i));
+      }
+    });
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -436,7 +472,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                   date.day == now.day &&
                   date.month == now.month &&
                   date.year == now.year;
-              final intensity = _getBarIntensity(index);
+              final intensity = _getBarIntensity(index, weekStartsOnSunday);
 
               return Expanded(
                 child: Padding(
@@ -505,9 +541,20 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
   }
 
-  double _getBarIntensity(int dayIndex) {
+  double _getBarIntensity(int dayIndex, bool weekStartsOnSunday) {
     final now = DateTime.now();
-    final date = now.subtract(Duration(days: 6 - dayIndex));
+    
+    DateTime date;
+    if (weekStartsOnSunday) {
+      // For Sunday start: calculate from Sunday of current week
+      final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
+      final daysSinceSunday = todayWeekday == 7 ? 0 : todayWeekday;
+      date = now.subtract(Duration(days: daysSinceSunday - dayIndex));
+    } else {
+      // For Monday start: existing logic
+      date = now.subtract(Duration(days: 6 - dayIndex));
+    }
+    
     return _calculateIntensityForDate(date);
   }
 
@@ -568,6 +615,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildHeatmapGrid() {
     final days = _getDaysCount();
+    
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
 
     const rows = 7;
     const gap = 6.0;
@@ -595,18 +646,21 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       padding: EdgeInsets.only(top: row == 0 ? 0 : gap),
                       child: Row(
                         children: List.generate(weeks, (col) {
+                          // Adjust cell index based on week start
+                          // For Sunday start: row 0 = Sunday, row 1 = Monday, etc.
+                          // For Monday start: row 0 = Monday, row 1 = Tuesday, etc.
                           final cellIndex = col * rows + row;
                           return Padding(
                             padding: EdgeInsets.only(left: col == 0 ? 0 : gap),
                             child: GestureDetector(
                               onLongPress: () {
-                                final date = _getDateForCellIndex(cellIndex, days);
+                                final date = _getDateForCellIndex(cellIndex, days, weekStartsOnSunday);
                                 _handleLongPress(date);
                               },
                               child: SizedBox(
                                 width: cellSize,
                                 height: cellSize,
-                                child: _buildHeatmapCellManual(cellIndex, days),
+                                child: _buildHeatmapCellManual(cellIndex, days, weekStartsOnSunday: weekStartsOnSunday),
                               ),
                             ),
                           );
@@ -781,43 +835,27 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final labelColor = isDark ? AppColors.textSecondary : const Color(0xFF94A3B8);
     
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+    
+    // Labels for Sunday start: Sun, Tue, Thu, Sat
+    // Labels for Monday start: Mon, Wed, Fri, Sun
+    final labels = weekStartsOnSunday
+        ? ['Sun', 'Tue', 'Thu', 'Sat']
+        : ['Mon', 'Wed', 'Fri', 'Sun'];
+    
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Mon',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: labelColor,
-          ),
+      children: labels.map((label) => Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: labelColor,
         ),
-        Text(
-          'Wed',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: labelColor,
-          ),
-        ),
-        Text(
-          'Fri',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: labelColor,
-          ),
-        ),
-        Text(
-          'Sun',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: labelColor,
-          ),
-        ),
-      ],
+      )).toList(),
     );
   }
 
@@ -825,6 +863,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     int index,
     int totalDays, {
     double? overrideIntensity,
+    bool weekStartsOnSunday = false,
   }) {
     // For Quarter/Year views, calculate date directly
     if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
@@ -840,11 +879,42 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
       final now = DateTime.now();
       final daysBack = totalDays - 1 - index;
+      
+      // Adjust for week start preference
+      int adjustedDaysBack = daysBack;
+      if (weekStartsOnSunday) {
+        // When week starts on Sunday, we need to shift the alignment
+        // Get today's weekday (1 = Mon, 7 = Sun)
+        final todayWeekday = now.weekday;
+        // Adjust so Sunday (7) becomes 0
+        final todayOffset = todayWeekday == 7 ? 0 : todayWeekday;
+        
+        // The grid index represents position in grid (row 0 = Sunday in Sun-start mode)
+        // We need to align the dates properly
+        final gridRow = index % 7;
+        final gridCol = index ~/ 7;
+        
+        // Calculate the actual date based on grid position
+        // In Sunday-start mode: row 0 = Sunday, 1 = Monday, etc.
+        // Find which day of week today is in Sunday-start (0-6, where 0 = Sunday)
+        final targetDayOfWeek = gridRow; // 0 = Sun, 1 = Mon, etc.
+        
+        // Calculate how many days back from today
+        final weeksBack = (totalDays - 1 - index) ~/ 7;
+        final dayInWeek = gridRow;
+        
+        // Today's position in Sunday-start week (0-6)
+        final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday;
+        
+        // Calculate days back
+        adjustedDaysBack = weeksBack * 7 + (todayPosInWeek - dayInWeek);
+      }
+      
       final date = DateTime(
         now.year,
         now.month,
         now.day,
-      ).subtract(Duration(days: daysBack));
+      ).subtract(Duration(days: adjustedDaysBack));
       final intensity = _calculateIntensityForDate(date);
 
       final dateOnly = DateTime(date.year, date.month, date.day);
@@ -865,7 +935,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     // Original logic for other views
     final intensity =
         overrideIntensity ??
-        (index >= totalDays ? -1 : _getCellIntensity(index, totalDays));
+        (index >= totalDays ? -1 : _getCellIntensity(index, totalDays, weekStartsOnSunday));
 
     return Container(
       decoration: BoxDecoration(
@@ -880,8 +950,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     );
   }
 
-  double _getCellIntensity(int index, int totalDays) {
-    final date = _getDateForIndex(index);
+  double _getCellIntensity(int index, int totalDays, bool weekStartsOnSunday) {
+    final date = _getDateForIndex(index, weekStartsOnSunday);
     final today = DateTime.now();
     final dateOnly = DateTime(date.year, date.month, date.day);
     final todayOnly = DateTime(today.year, today.month, today.day);
@@ -908,13 +978,24 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return intensity;
   }
 
-  DateTime _getDateForIndex(int index) {
+  DateTime _getDateForIndex(int index, [bool weekStartsOnSunday = false]) {
     final now = DateTime.now();
     int daysToSubtract;
 
     switch (_selectedTimeframe) {
       case 'Week':
         daysToSubtract = 6 - index; // 0 = 6 days ago, 6 = today
+        
+        // Adjust for Sunday week start
+        if (weekStartsOnSunday) {
+          // In Sunday-start mode, we need to shift the week alignment
+          // row 0 should be Sunday, row 6 should be Saturday
+          final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
+          final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday; // Convert to 0 = Sun, 1 = Mon, etc.
+          final targetDayOfWeek = index; // 0-6 where 0 = Sunday in our grid
+          
+          daysToSubtract = (todayPosInWeek - targetDayOfWeek + 7) % 7;
+        }
         break;
       case 'Month':
         daysToSubtract = 29 - index;
@@ -1391,13 +1472,37 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return perfectCount;
   }
 
-  DateTime _getDateForCellIndex(int index, int totalDays) {
+  DateTime _getDateForCellIndex(int index, int totalDays, [bool weekStartsOnSunday = false]) {
     if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
       final now = DateTime.now();
       final daysBack = totalDays - 1 - index;
+      
+      if (weekStartsOnSunday) {
+        // Get grid position
+        final gridRow = index % 7; // 0-6
+        final gridCol = index ~/ 7; // week number
+        
+        // Today's weekday (1 = Mon, 7 = Sun) -> convert to (0 = Sun, 1 = Mon, etc.)
+        final todayWeekday = now.weekday;
+        final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday;
+        
+        // Calculate weeks back from the grid column
+        final totalWeeks = (totalDays / 7).ceil();
+        final weeksBack = totalWeeks - 1 - gridCol;
+        
+        // Calculate the day offset within the week
+        // gridRow 0 = Sunday, 1 = Monday, etc.
+        final dayInWeek = gridRow;
+        
+        // Calculate total days back
+        final adjustedDaysBack = weeksBack * 7 + (todayPosInWeek - dayInWeek);
+        
+        return DateTime(now.year, now.month, now.day).subtract(Duration(days: adjustedDaysBack));
+      }
+      
       return DateTime(now.year, now.month, now.day).subtract(Duration(days: daysBack));
     }
-    return _getDateForIndex(index);
+    return _getDateForIndex(index, weekStartsOnSunday);
   }
 
   void _handleLongPress(DateTime date) {
@@ -1554,7 +1659,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                         ),
                       ),
                     );
-                  }).toList(),
+                  }),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

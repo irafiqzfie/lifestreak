@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/app_colors.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
@@ -15,7 +16,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  String selectedStartOfWeek = 'Mon';
 
   void _showDeleteConfirmation() {
     showDialog(
@@ -461,13 +461,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildStartOfWeekOption(String day) {
-    final isSelected = selectedStartOfWeek == day;
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final isSelected = startOfWeek == day;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedStartOfWeek = day;
-        });
+        ref.read(settingsProvider.notifier).setStartOfWeek(day);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),

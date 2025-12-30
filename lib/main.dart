@@ -19,6 +19,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Lifestreak',
       themeMode: themeMode,
+      themeAnimationDuration: Duration.zero,
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
@@ -29,6 +30,15 @@ class MyApp extends ConsumerWidget {
         scaffoldBackgroundColor: AppColors.lightSurface,
         cardColor: AppColors.lightCard,
         dividerColor: AppColors.lightDivider,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.lightBackground,
           foregroundColor: AppColors.lightTextPrimary,
@@ -59,6 +69,15 @@ class MyApp extends ConsumerWidget {
         scaffoldBackgroundColor: AppColors.darkBackground,
         cardColor: AppColors.darkCard,
         dividerColor: AppColors.darkDivider,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.darkBackground,
           foregroundColor: AppColors.textPrimary,
