@@ -13,45 +13,30 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
-  final _codeController = TextEditingController();
   final _emailFocusNode = FocusNode();
-  final _codeFocusNode = FocusNode();
-  String? _lastEmailSent;
+  bool _emailSent = false;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _codeController.dispose();
     _emailFocusNode.dispose();
-    _codeFocusNode.dispose();
     super.dispose();
   }
 
-  void _requestCode() {
+  void _sendMagicLink() {
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
-    _lastEmailSent = email;
-    ref.read(authProvider.notifier).requestMagicLink(email);
-  }
-
-  void _resendCode() {
-    if (_lastEmailSent != null) {
-      ref.read(authProvider.notifier).requestMagicLink(_lastEmailSent!);
-    }
-  }
-
-  void _verifyCode() {
-    final code = _codeController.text.trim();
-    final requestId = ref.read(authProvider).pendingRequestId;
-    if (requestId == null || code.isEmpty) return;
-    ref.read(authProvider.notifier).verifyMagicLink(requestId, code);
+    
+    ref.read(authProvider.notifier).signInWithMagicLink(email);
+    setState(() {
+      _emailSent = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isBusy = authState.status == AuthStatus.requesting;
-    final hasRequestId = authState.pendingRequestId != null;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -89,11 +74,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         children: [
                           _buildHeader(),
                           const SizedBox(height: 48),
-                          if (!hasRequestId) ...[
-                            _buildEmailForm(isBusy),
-                          ] else ...[
-                            _buildCodeForm(isBusy),
-                          ],
+                          if (!_emailSent)
+                            _buildEmailForm(isBusy)
+                          else
+                            _buildSuccessMessage(),
                         ],
                       ),
                       const SizedBox(height: 48),
@@ -103,7 +87,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
               ),
             ),
-            // Error message
+            // Message display
             if (authState.message != null)
               Positioned(
                 bottom: 16,
@@ -112,7 +96,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
+                    color: authState.message!.contains('Check your email')
+                        ? const Color(0xFF3f6a4a)
+                        : const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -173,7 +159,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'Enter your email to receive a verification code. Your habit data will be saved and synced across your devices.',
+            'Enter your email to receive a secure sign-in link. No password required.',
             style: GoogleFonts.inter(
               fontSize: 16,
               color: const Color(0xFF6b7280),
@@ -190,13 +176,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           label: 'Email',
           keyboardType: TextInputType.emailAddress,
           enabled: !isBusy,
-          onSubmitted: (_) => _requestCode(),
+          onSubmitted: (_) => _sendMagicLink(),
         ),
         const SizedBox(height: 24),
         // Submit button
         _buildPrimaryButton(
-          label: 'Send verification code',
-          onPressed: isBusy ? null : _requestCode,
+          label: 'Send Sign-In Link',
+          onPressed: isBusy ? null : _sendMagicLink,
           loading: isBusy,
         ),
         const SizedBox(height: 24),
@@ -207,7 +193,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             const Icon(Icons.lock, size: 14, color: Color(0xFF3f6a4a)),
             const SizedBox(width: 6),
             Text(
-              'No password required. We never share your data.',
+              'Passwordless & secure. We never share your data.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: const Color(0xFF6b7280).withOpacity(0.8),
@@ -219,9 +205,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  Widget _buildCodeForm(bool isBusy) {
+  Widget _buildSuccessMessage() {
     return Column(
       children: [
+        // Icon
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3f6a4a).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.email_outlined,
+            size: 40,
+            color: Color(0xFF3f6a4a),
+          ),
+        ),
+        const SizedBox(height: 24),
         // Title
         Text(
           'Check your email',
@@ -236,7 +237,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'We sent a verification code to ${_lastEmailSent ?? 'your email'}.',
+            'We sent a secure sign-in link to\n${_emailController.text.trim()}',
             style: GoogleFonts.inter(
               fontSize: 16,
               color: const Color(0xFF6b7280),
@@ -245,43 +246,47 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 12),
-        // Tips
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '• Check your spam/promotions folder\n• The code may take up to 30 seconds to arrive\n• Code expires in 10 minutes',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: const Color(0xFF6b7280).withOpacity(0.8),
-              height: 1.6,
-            ),
+        const SizedBox(height: 24),
+        // Instructions
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3f6a4a).withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Next steps:',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1f2937),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '1. Open your email app\n2. Look for the email from Lifestreak\n3. Click the sign-in link\n4. The app will open automatically',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF6b7280),
+                  height: 1.6,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 32),
-        // Code input
-        _buildFloatingLabelInput(
-          controller: _codeController,
-          focusNode: _codeFocusNode,
-          label: 'Verification code',
-          keyboardType: TextInputType.number,
-          enabled: !isBusy,
-          autofocus: true,
-          onSubmitted: (_) => _verifyCode(),
-        ),
         const SizedBox(height: 24),
-        // Verify button
-        _buildPrimaryButton(
-          label: 'Verify and sign in',
-          onPressed: isBusy ? null : _verifyCode,
-          loading: isBusy,
-        ),
-        const SizedBox(height: 16),
         // Resend button
         TextButton(
-          onPressed: isBusy ? null : _resendCode,
+          onPressed: () {
+            setState(() {
+              _emailSent = false;
+            });
+          },
           child: Text(
-            'Resend code',
+            'Use different email',
             style: GoogleFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -299,7 +304,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     required String label,
     TextInputType? keyboardType,
     bool enabled = true,
-    bool autofocus = false,
     Function(String)? onSubmitted,
   }) {
     return TextField(
@@ -307,7 +311,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       focusNode: focusNode,
       keyboardType: keyboardType,
       enabled: enabled,
-      autofocus: autofocus,
       style: GoogleFonts.inter(
         fontSize: 18,
         color: const Color(0xFF1f2937),

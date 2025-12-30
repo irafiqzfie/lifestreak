@@ -98,7 +98,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (shouldLogout == true && mounted) {
-      await ref.read(authProvider.notifier).logout();
+      await ref.read(authProvider.notifier).signOut();
 
       // Navigate to root and remove all routes to trigger AuthGate rebuild
       if (mounted) {

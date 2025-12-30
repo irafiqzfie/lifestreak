@@ -1,11 +1,31 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth_gate.dart';
+import 'services/deep_link_service.dart';
 import 'utils/app_colors.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: SupabaseConfig.supabaseUrl,
+    anonKey: SupabaseConfig.supabaseAnonKey,
+    authOptions: FlutterAuthClientOptions(
+      authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce,
+    ),
+  );
+  
+  // Initialize deep link service (mobile only)
+  if (!kIsWeb) {
+    final deepLinkService = DeepLinkService();
+    await deepLinkService.initialize();
+  }
+  
   runApp(const ProviderScope(child: MyApp()));
 }
 
