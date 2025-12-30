@@ -395,23 +395,29 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
               }
 
               final day = index - offset + 1;
+              final date = DateTime(now.year, now.month, day);
               final intensity = _getMonthDayIntensity(day);
 
               final isDark = Theme.of(context).brightness == Brightness.dark;
-              return Container(
-                decoration: BoxDecoration(
-                  color: _getColorForIntensity(intensity),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    '$day',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: intensity == 0.0
-                          ? (isDark ? AppColors.textMuted : const Color(0xFF94A3B8))
-                          : (isDark ? AppColors.textPrimary : const Color(0xFF0a160f)),
+              return GestureDetector(
+                onLongPress: () {
+                  _handleLongPress(date);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _getColorForIntensity(intensity),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$day',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: intensity == 0.0
+                            ? (isDark ? AppColors.textMuted : const Color(0xFF94A3B8))
+                            : (isDark ? AppColors.textPrimary : const Color(0xFF0a160f)),
+                      ),
                     ),
                   ),
                 ),
@@ -480,57 +486,62 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                     left: index == 0 ? 0 : 6,
                     right: index == 6 ? 0 : 6,
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        days[index],
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.textSecondary
-                              : const Color(0xFF94A3B8),
-                          letterSpacing: 0.5,
+                  child: GestureDetector(
+                    onLongPress: () {
+                      _handleLongPress(date);
+                    },
+                    child: Column(
+                      children: [
+                        Text(
+                          days[index],
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textSecondary
+                                : const Color(0xFF94A3B8),
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          color: _getColorForIntensity(intensity),
-                          borderRadius: BorderRadius.circular(8),
-                          border: isToday
-                              ? Border.all(
-                                  color: const Color(0xFF3f6a4a),
-                                  width: 2,
-                                )
-                              : null,
-                          boxShadow: isToday
-                              ? [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF3f6a4a,
-                                    ).withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: _getColorForIntensity(intensity),
+                            borderRadius: BorderRadius.circular(8),
+                            border: isToday
+                                ? Border.all(
+                                    color: const Color(0xFF3f6a4a),
+                                    width: 2,
+                                  )
+                                : null,
+                            boxShadow: isToday
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF3f6a4a,
+                                      ).withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${date.day}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: isToday
-                              ? const Color(0xFF3f6a4a)
-                              : const Color(0xFF0F172A),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${date.day}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isToday
+                                ? const Color(0xFF3f6a4a)
+                                : const Color(0xFF0F172A),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
