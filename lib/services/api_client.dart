@@ -105,6 +105,10 @@ class ApiClient {
     await _postJson('/friends/reject', {'userId': userId}, token: token);
   }
 
+  Future<void> deleteAccount({required String token}) async {
+    await _postJson('/account/delete', {}, token: token);
+  }
+
   Future<Map<String, dynamic>> _postJson(
     String path,
     Map<String, dynamic> body, {

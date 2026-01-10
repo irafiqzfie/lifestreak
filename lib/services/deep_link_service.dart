@@ -1,16 +1,17 @@
 import 'dart:async';
 
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 
 /// Service to handle deep links for magic link authentication
 class DeepLinkService {
   StreamSubscription? _subscription;
+  final _appLinks = AppLinks();
   
   /// Initialize the deep link listener
   Future<void> initialize() async {
     // Handle the initial link if the app was opened from a deep link
     try {
-      final initialUri = await getInitialUri();
+      final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
         await _handleDeepLink(initialUri);
       }
@@ -19,11 +20,9 @@ class DeepLinkService {
     }
 
     // Listen for deep links while the app is running
-    _subscription = uriLinkStream.listen(
-      (Uri? uri) async {
-        if (uri != null) {
-          await _handleDeepLink(uri);
-        }
+    _subscription = _appLinks.uriLinkStream.listen(
+      (Uri uri) async {
+        await _handleDeepLink(uri);
       },
       onError: (err) {
         // Silently handle errors

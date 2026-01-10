@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/api_client.dart';
+import '../services/session_storage.dart';
 import '../utils/app_colors.dart';
+import 'auth_gate.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
 
@@ -16,34 +20,96 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isDeletingAccount = false;
+
+  Future<void> _deleteAccount() async {
+    setState(() {
+      _isDeletingAccount = true;
+    });
+
+    try {
+      // Ensure session is hydrated (CRITICAL for web)
+      var session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        final event = await Supabase.instance.client.auth.onAuthStateChange.first;
+        session = event.session;
+      }
+
+      if (session == null || session.accessToken.isEmpty) {
+        throw Exception('Not authenticated');
+      }
+
+      // Call Edge Function; send token in both header and body (web-safe)
+      final response = await Supabase.instance.client.functions.invoke(
+        'delete-account',
+        headers: {
+          'Authorization': 'Bearer ${session.accessToken}',
+        },
+        body: {
+          'token': session.accessToken,
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception('Delete failed');
+      }
+
+      // Sign out AFTER successful deletion
+      await Supabase.instance.client.auth.signOut();
+
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthGate()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isDeletingAccount = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to delete account. Please try again.'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
 
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text(
-          'Are you sure you want to delete your account? This will permanently delete all your habit data and cannot be undone.',
+          'This will permanently delete your account and all associated data. This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: _isDeletingAccount ? null : () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Account deletion is not yet implemented'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed: _isDeletingAccount
+                ? null
+                : () {
+                    Navigator.pop(ctx);
+                    _deleteAccount();
+                  },
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFEF4444),
             ),
-            child: const Text('Delete'),
+            child: _isDeletingAccount
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Delete Account'),
           ),
         ],
       ),
@@ -235,7 +301,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     Flexible(
                       child: Text(
-                        'user@lifestreak.app',
+                        Supabase.instance.client.auth.currentUser?.email ?? 'user@lifestreak.app',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           color: const Color(0xFF6B7280),
