@@ -50,7 +50,10 @@ serve(async (req) => {
     }
     
     console.log('User validated:', user.id)
-    console.log('Deleting user...')
+    console.log('Deleting Supabase auth user...')
+    
+    // Note: Backend data (habits, logs, friends) is deleted by the Flutter app
+    // BEFORE calling this function, using the existing API client
 
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
 

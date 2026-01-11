@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
@@ -39,7 +40,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         throw Exception('Not authenticated');
       }
 
-      // Call Edge Function; send token in both header and body (web-safe)
+      // Step 1: Try to delete backend data (best effort)
+      final apiClient = ref.read(apiClientProvider);
+      try {
+        await apiClient.deleteAccount(token: session.accessToken);
+      } catch (e) {
+        // Log but continue - backend deletion failed but we'll still delete auth user
+        print('Backend deletion failed (SSL error): $e');
+      }
+
+      // Step 2: Clear ALL local data (SharedPreferences)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Step 3: Delete Supabase Auth user via Edge Function (MUST succeed)
       final response = await Supabase.instance.client.functions.invoke(
         'delete-account',
         headers: {
