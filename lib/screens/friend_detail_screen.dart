@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/habit_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/app_colors.dart';
 import '../utils/scoring_logic.dart';
 
@@ -19,8 +20,7 @@ class FriendDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<FriendDetailScreen> createState() =>
-      _FriendDetailScreenState();
+  ConsumerState<FriendDetailScreen> createState() => _FriendDetailScreenState();
 }
 
 class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
@@ -88,7 +88,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: (isDark ? const Color(0xFF1E1E1E) : Colors.white.withOpacity(0.95)),
+        color: (isDark
+            ? const Color(0xFF1E1E1E)
+            : Colors.white.withOpacity(0.95)),
         border: const Border(
           bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
@@ -123,18 +125,23 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-        child: Icon(icon, color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A), size: 24),
+        child: Icon(
+          icon,
+          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+          size: 24,
+        ),
       ),
     );
   }
 
   Widget _buildTimeframeSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(4),
@@ -151,6 +158,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   }
 
   Widget _buildTimeframeOption(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = _selectedTimeframe == label;
     return Expanded(
       child: GestureDetector(
@@ -160,12 +168,14 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         }),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected
+                ? (isDark ? AppColors.darkCard : Colors.white)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -179,8 +189,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: isSelected
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFF64748B),
+                    ? (isDark ? AppColors.textPrimary : const Color(0xFF0F172A))
+                    : (isDark ? AppColors.textMuted : const Color(0xFF64748B)),
               ),
             ),
           ),
@@ -246,7 +256,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       case 'Year':
         return 'Yearly Activity';
       default:
-        return 'Last 90 Days';
+        final now = DateTime.now();
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        return 'Q$quarter Activity';
     }
   }
 
@@ -292,7 +304,13 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       case 'Year':
         return 'Jan 1 - Dec 31';
       default:
-        start = now.subtract(const Duration(days: 90));
+        // Quarter view
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        final endMonth = quarter * 3;
+        final startDate = DateTime(now.year, startMonth, 1);
+        final endDate = DateTime(now.year, endMonth + 1, 0);
+        return '${_formatDate(startDate)} - ${_formatDate(endDate)}';
     }
 
     return '${_formatDate(start)} - ${_formatDate(now)}';
@@ -503,6 +521,46 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       'Dec',
     ];
 
+    // For quarterly view, show the actual quarter months
+    if (_selectedTimeframe == 'Quarter') {
+      final quarter = ((now.month - 1) ~/ 3) + 1;
+      final startMonth = (quarter - 1) * 3 + 1;
+      final month1 = months[startMonth - 1];
+      final month2 = months[startMonth];
+      final month3 = months[startMonth + 1];
+
+      return Padding(
+        padding: const EdgeInsets.only(left: 40),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Text(
+              month1,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+            Text(
+              month2,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+            Text(
+              month3,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default: Calculate which months to show based on 90 days back
     final start = now.subtract(const Duration(days: 90));
     final month1 = months[start.month - 1];
     final month2 = months[(start.month % 12)];
@@ -540,7 +598,22 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   }
 
   Widget _buildHeatmapGrid() {
-    const days = 90;
+    // Calculate days dynamically for quarter view
+    final now = DateTime.now();
+    int days;
+
+    if (_selectedTimeframe == 'Quarter') {
+      final quarter = ((now.month - 1) ~/ 3) + 1;
+      final startMonth = (quarter - 1) * 3 + 1;
+      final endMonth = quarter * 3;
+      days = 0;
+      for (int month = startMonth; month <= endMonth; month++) {
+        days += DateTime(now.year, month + 1, 0).day;
+      }
+    } else {
+      days = 90; // fallback
+    }
+
     const rows = 7;
     const gap = 6.0;
 
@@ -595,14 +668,14 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         children: [
           _buildYearlyHeatmapSection(
             title: 'Jan - Jun',
-            startMonth: 1,
-            endMonth: 6,
+            startDay: 0,
+            totalDays: 181,
           ),
           const SizedBox(height: 24),
           _buildYearlyHeatmapSection(
             title: 'Jul - Dec',
-            startMonth: 7,
-            endMonth: 12,
+            startDay: 181,
+            totalDays: 184,
           ),
         ],
       ),
@@ -611,8 +684,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
 
   Widget _buildYearlyHeatmapSection({
     required String title,
-    required int startMonth,
-    required int endMonth,
+    required int startDay,
+    required int totalDays,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
@@ -635,12 +708,6 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         ),
         LayoutBuilder(
           builder: (context, constraints) {
-            final monthsToShow = endMonth - startMonth + 1;
-            int totalDays = 0;
-            for (int m = startMonth; m <= endMonth; m++) {
-              totalDays += DateTime(now.year, m + 1, 0).day;
-            }
-
             final weeks = (totalDays / rows).ceil();
             final totalGaps = (weeks - 1) * gap;
             final cellSize =
@@ -667,15 +734,15 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                             children: List.generate(weeks, (col) {
                               final cellIndex = col * rows + row;
                               return Padding(
-                                padding:
-                                    EdgeInsets.only(left: col == 0 ? 0 : gap),
+                                padding: EdgeInsets.only(
+                                  left: col == 0 ? 0 : gap,
+                                ),
                                 child: SizedBox(
                                   width: cellSize,
                                   height: cellSize,
                                   child: _buildYearlyHeatmapCell(
-                                    cellIndex,
-                                    totalDays,
-                                    startMonth,
+                                    startDay + cellIndex,
+                                    365,
                                   ),
                                 ),
                               );
@@ -694,24 +761,53 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     );
   }
 
-  Widget _buildYearlyHeatmapCell(
-    int index,
-    int totalDays,
-    int startMonth,
-  ) {
-    if (index >= totalDays) {
+  Widget _buildYearlyHeatmapCell(int index, int totalDays) {
+    final now = DateTime.now();
+    final startOfYear = DateTime(now.year, 1, 1);
+
+    // Calculate which date this grid cell represents
+    // Grid is column-major: index = col * 7 + row
+    final row = index % 7;
+    final col = index ~/ 7;
+
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+
+    // Find the start of week (Monday or Sunday) of the week containing Jan 1
+    final startWeekday = startOfYear.weekday; // 1=Mon, 7=Sun
+
+    int daysToSubtract;
+    if (weekStartsOnSunday) {
+      // For Sunday start: if Jan 1 is Sunday (7), subtract 0; otherwise subtract weekday value
+      daysToSubtract = startWeekday == 7 ? 0 : startWeekday;
+    } else {
+      // For Monday start: subtract (weekday - 1)
+      daysToSubtract = startWeekday - 1;
+    }
+
+    final firstCellDate = startOfYear.subtract(Duration(days: daysToSubtract));
+    final date = firstCellDate.add(Duration(days: col * 7 + row));
+
+    // Check if date is outside the year range
+    if (date.year != now.year) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: _getColorForIntensity(0),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
         ),
       );
     }
 
-    final now = DateTime.now();
-    final firstDay = DateTime(now.year, startMonth, 1);
-    final date = firstDay.add(Duration(days: index));
+    // Show future dates with zero intensity color
+    if (date.isAfter(now)) {
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(0),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
 
     final intensity = _calculateIntensityForDate(date);
 
@@ -731,20 +827,75 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   }
 
   Widget _buildHeatmapCell(int index, int totalDays) {
-    if (index >= totalDays) {
+    final now = DateTime.now();
+    DateTime startDate;
+
+    if (_selectedTimeframe == 'Quarter') {
+      final quarter = ((now.month - 1) ~/ 3) + 1;
+      final startMonth = (quarter - 1) * 3 + 1;
+      startDate = DateTime(now.year, startMonth, 1);
+    } else {
+      // Fallback - shouldn't reach here for Quarter/Year
       return Container(
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: _getColorForIntensity(0),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
         ),
       );
     }
 
-    final now = DateTime.now();
-    final daysBack = totalDays - 1 - index;
-    final date = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: daysBack));
+    // Calculate which date this grid cell represents
+    // Grid is column-major: index = col * 7 + row
+    final row = index % 7;
+    final col = index ~/ 7;
+
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+
+    // Find the start of week (Monday or Sunday) of the week containing startDate
+    final startWeekday = startDate.weekday; // 1=Mon, 7=Sun
+
+    int daysToSubtract;
+    if (weekStartsOnSunday) {
+      // For Sunday start: if startDate is Sunday (7), subtract 0; otherwise subtract weekday value
+      daysToSubtract = startWeekday == 7 ? 0 : startWeekday;
+    } else {
+      // For Monday start: subtract (weekday - 1)
+      daysToSubtract = startWeekday - 1;
+    }
+
+    final firstCellDate = startDate.subtract(Duration(days: daysToSubtract));
+    final date = firstCellDate.add(Duration(days: col * 7 + row));
+
+    // Calculate period end
+    final quarter = ((now.month - 1) ~/ 3) + 1;
+    final endMonth = quarter * 3;
+    final periodEnd = DateTime(
+      now.year,
+      endMonth,
+      DateTime(now.year, endMonth + 1, 0).day,
+    );
+
+    // Check if date is outside the period range
+    if (date.isBefore(startDate) || date.isAfter(periodEnd)) {
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(0),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
+
+    // Show future dates with zero intensity color
+    if (date.isAfter(now)) {
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(0),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
 
     final intensity = _calculateIntensityForDate(date);
 
@@ -765,12 +916,23 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
 
   Widget _buildDayLabels() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = isDark ? AppColors.textSecondary : const Color(0xFF94A3B8);
-    
+    final labelColor = isDark
+        ? AppColors.textSecondary
+        : const Color(0xFF94A3B8);
+
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+
+    // Adjust day labels based on week start preference
+    final days = weekStartsOnSunday
+        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.end,
-      children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      children: days
           .map(
             (day) => Text(
               day,
@@ -796,7 +958,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     if (habits.isEmpty) return 0.0;
 
     final dateKey = _formatDateKey(date);
-    
+
     // Simulate friend completion data (using same storage prefix with friend ID)
     int completedCount = 0;
     for (final habit in habits) {
@@ -838,8 +1000,15 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         startDate = DateTime(now.year, 1, 1);
         break;
       default:
-        days = 90;
-        startDate = now.subtract(const Duration(days: 89));
+        // Quarter: calculate days in current quarter
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        final endMonth = quarter * 3;
+        days = 0;
+        for (int month = startMonth; month <= endMonth; month++) {
+          days += DateTime(now.year, month + 1, 0).day;
+        }
+        startDate = DateTime(now.year, startMonth, 1);
     }
 
     for (int i = 0; i < days; i++) {
@@ -869,7 +1038,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
 
   Color _getColorForIntensity(double intensity) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Map intensity to score (0.0, 0.33, 0.66, 1.0 → 0, 1, 2, 3)
     int score;
     if (intensity == 0.0) {
@@ -881,7 +1050,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     } else {
       score = 3;
     }
-    
+
     return AppColors.heatmapColor(score, isDark);
   }
 
@@ -989,7 +1158,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
@@ -1046,7 +1217,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),
@@ -1103,7 +1276,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : const Color(0xFF0F172A),
                   height: 1,
                 ),
               ),

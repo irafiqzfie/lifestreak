@@ -611,12 +611,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF13EC6A).withOpacity(0.1),
+                  color: AppColors.greenPrimary.withOpacity(isDark ? 0.15 : 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.security,
-                  color: Color(0xFF13EC6A),
+                  color: AppColors.greenPrimary,
                   size: 20,
                 ),
               ),
@@ -630,7 +630,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF0D1B13),
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF0D1B13),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -638,7 +638,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       'Lifestreak believes in total transparency. Friend activity is only shared when mutually agreed. We do not sell your habit data to third parties.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
-                        color: const Color(0xFF6B7280),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
                         height: 1.5,
                       ),
                     ),

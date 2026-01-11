@@ -27,7 +27,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -35,7 +35,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       'Last updated: December 28, 2025',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
-                        color: const Color(0xFF64748B),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -43,7 +43,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       'By using Lifestreak, you agree to these Terms.',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15,
-                        color: const Color(0xFF475569),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                         height: 1.6,
                       ),
                     ),
@@ -60,7 +60,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                         'You are responsible for activity under your account.',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
-                          color: const Color(0xFF475569),
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                           height: 1.6,
                         ),
                       ),
@@ -78,7 +78,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                         'If you add friends:',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
-                          color: const Color(0xFF475569),
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                           height: 1.6,
                         ),
                       ),
@@ -102,7 +102,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                         'Lifestreak does not provide medical or health advice.',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
-                          color: const Color(0xFF475569),
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                           height: 1.6,
                         ),
                       ),
@@ -113,7 +113,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                         'Support:',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
-                          color: const Color(0xFF475569),
+                          color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                           height: 1.6,
                         ),
                       ),
@@ -139,6 +139,7 @@ class TermsOfServiceScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -163,9 +164,9 @@ class TermsOfServiceScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back,
-                  color: Color(0xFF0F172A),
+                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
                   size: 24,
                 ),
               ),
@@ -179,6 +180,7 @@ class TermsOfServiceScreen extends StatelessWidget {
   }
 
   Widget _buildSection(String title, List<Widget> content) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -187,7 +189,7 @@ class TermsOfServiceScreen extends StatelessWidget {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF0F172A),
+            color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
           ),
         ),
         const SizedBox(height: 12),
@@ -197,6 +199,7 @@ class TermsOfServiceScreen extends StatelessWidget {
   }
 
   Widget _buildBulletList(List<String> items) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items
@@ -210,7 +213,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                     '• ',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
-                      color: const Color(0xFF475569),
+                      color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                       height: 1.6,
                     ),
                   ),
@@ -219,7 +222,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       item,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15,
-                        color: const Color(0xFF475569),
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF475569),
                         height: 1.6,
                       ),
                     ),
