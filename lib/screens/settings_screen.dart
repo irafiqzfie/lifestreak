@@ -710,7 +710,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailingIcon: Icons.chevron_right,
                 onTap: () => _showPlaceholderDialog(
                   'Contact Support',
-                  'For support, please email: support@lifestreak.app',
+                  'For support, please email: support@lifestreak.my',
                 ),
               ),
             ],

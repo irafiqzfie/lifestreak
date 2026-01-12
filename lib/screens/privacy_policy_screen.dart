@@ -48,8 +48,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _buildSection('Information We Collect', [
-                      _buildBulletList([
+                    _buildSection(context, 'Information We Collect', [
+                      _buildBulletList(context, [
                         'Email address (for authentication)',
                         'Habit data you create (habits, completion status, scores, streaks)',
                         'Friend relationships and aggregated progress data (if you use social features)',
@@ -66,7 +66,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('How We Use Data', [
+                    _buildSection(context, 'How We Use Data', [
                       Text(
                         'We use your data only to:',
                         style: GoogleFonts.plusJakartaSans(
@@ -76,7 +76,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _buildBulletList([
+                      _buildBulletList(context, [
                         'Provide habit tracking features',
                         'Calculate scores, streaks, and statistics',
                         'Enable optional friend comparison features',
@@ -94,14 +94,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Sharing', [
-                      _buildBulletList([
+                    _buildSection(context, 'Sharing', [
+                      _buildBulletList(context, [
                         'Friends can only see aggregated progress data.',
                         'Habit names and individual habit details are never shared.',
                       ]),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Data Storage', [
+                    _buildSection(context, 'Data Storage', [
                       Text(
                         'Your data is stored securely using industry-standard services.',
                         style: GoogleFonts.plusJakartaSans(
@@ -112,7 +112,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Your Rights', [
+                    _buildSection(context, 'Your Rights', [
                       Text(
                         'You can delete your account and all associated data at any time from the app settings.',
                         style: GoogleFonts.plusJakartaSans(
@@ -123,7 +123,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Contact', [
+                    _buildSection(context, 'Contact', [
                       Text(
                         'For questions or support:',
                         style: GoogleFonts.plusJakartaSans(
@@ -134,7 +134,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'support@lifestreaks.my',
+                        'support@lifestreak.my',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
                           color: const Color(0xFF3f6a4a),
@@ -194,7 +194,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> content) {
+  Widget _buildSection(BuildContext context, String title, List<Widget> content) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +213,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubsection(String title, List<String> items) {
+  Widget _buildSubsection(BuildContext context, String title, List<String> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -228,12 +228,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        _buildBulletList(items),
+        _buildBulletList(context, items),
       ],
     );
   }
 
-  Widget _buildBulletList(List<String> items) {
+  Widget _buildBulletList(BuildContext context, List<String> items) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -109,7 +109,11 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-        child: Icon(icon, color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A), size: 24),
+        child: Icon(
+          icon,
+          color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+          size: 24,
+        ),
       ),
     );
   }
@@ -148,7 +152,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         }),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected 
+            color: isSelected
                 ? (isDark ? AppColors.darkCard : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
@@ -236,7 +240,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       case 'Year':
         return 'Yearly Activity';
       default:
-        return 'Last 90 Days';
+        final now = DateTime.now();
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        return 'Q$quarter Activity';
     }
   }
 
@@ -282,7 +288,13 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       case 'Year':
         return 'Jan 1 - Dec 31';
       default:
-        start = now.subtract(const Duration(days: 90));
+        // Quarter view
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        final endMonth = quarter * 3;
+        final startDate = DateTime(now.year, startMonth, 1);
+        final endDate = DateTime(now.year, endMonth + 1, 0);
+        return '${_formatDate(startDate)} - ${_formatDate(endDate)}';
     }
 
     return '${_formatDate(start)} - ${_formatDate(now)}';
@@ -336,20 +348,20 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final firstWeekday = firstDayOfMonth.weekday; // 1 = Monday, 7 = Sunday
-    
+
     // Get start of week preference
     final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
     final weekStartsOnSunday = startOfWeek == 'Sun';
-    
+
     // Adjust the day labels based on start of week
     final dayLabels = weekStartsOnSunday
         ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     // Calculate offset for empty cells
     // If week starts on Sunday, weekday 7 (Sunday) should be 0
     // If week starts on Monday, weekday 1 (Monday) should be 0
-    final offset = weekStartsOnSunday 
+    final offset = weekStartsOnSunday
         ? (firstWeekday == 7 ? 0 : firstWeekday)
         : (firstWeekday - 1);
 
@@ -415,8 +427,12 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: intensity == 0.0
-                            ? (isDark ? AppColors.textMuted : const Color(0xFF94A3B8))
-                            : (isDark ? AppColors.textPrimary : const Color(0xFF0a160f)),
+                            ? (isDark
+                                  ? AppColors.textMuted
+                                  : const Color(0xFF94A3B8))
+                            : (isDark
+                                  ? AppColors.textPrimary
+                                  : const Color(0xFF0a160f)),
                       ),
                     ),
                   ),
@@ -445,15 +461,15 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildWeeklyBars() {
     final now = DateTime.now();
-    
+
     // Get start of week preference
     final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
     final weekStartsOnSunday = startOfWeek == 'Sun';
-    
+
     final days = weekStartsOnSunday
         ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     // Calculate dates based on week start preference
     final dates = List.generate(7, (i) {
       if (weekStartsOnSunday) {
@@ -497,7 +513,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? AppColors.textSecondary
                                 : const Color(0xFF94A3B8),
                             letterSpacing: 0.5,
@@ -554,7 +571,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   double _getBarIntensity(int dayIndex, bool weekStartsOnSunday) {
     final now = DateTime.now();
-    
+
     DateTime date;
     if (weekStartsOnSunday) {
       // For Sunday start: calculate from Sunday of current week
@@ -565,7 +582,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       // For Monday start: existing logic
       date = now.subtract(Duration(days: 6 - dayIndex));
     }
-    
+
     return _calculateIntensityForDate(date);
   }
 
@@ -586,12 +603,58 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       'Dec',
     ];
 
-    // Calculate which months to show based on 90 days back
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // For quarterly view, show the actual quarter months
+    if (_selectedTimeframe == 'Quarter') {
+      final quarter = ((now.month - 1) ~/ 3) + 1;
+      final startMonth = (quarter - 1) * 3 + 1;
+      final month1 = months[startMonth - 1];
+      final month2 = months[startMonth];
+      final month3 = months[startMonth + 1];
+
+      return Padding(
+        padding: const EdgeInsets.only(left: 40),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Text(
+              month1,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: isDark
+                    ? AppColors.textSecondary
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
+            Text(
+              month2,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: isDark
+                    ? AppColors.textSecondary
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
+            Text(
+              month3,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: isDark
+                    ? AppColors.textSecondary
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default: Calculate which months to show based on 90 days back
     final start = now.subtract(const Duration(days: 90));
     final month1 = months[start.month - 1];
     final month2 = months[(start.month % 12)];
     final month3 = months[now.month - 1];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(left: 40),
@@ -626,7 +689,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   Widget _buildHeatmapGrid() {
     final days = _getDaysCount();
-    
+
     // Get start of week preference
     final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
     final weekStartsOnSunday = startOfWeek == 'Sun';
@@ -665,13 +728,21 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                             padding: EdgeInsets.only(left: col == 0 ? 0 : gap),
                             child: GestureDetector(
                               onLongPress: () {
-                                final date = _getDateForCellIndex(cellIndex, days, weekStartsOnSunday);
+                                final date = _getDateForCellIndex(
+                                  cellIndex,
+                                  days,
+                                  weekStartsOnSunday,
+                                );
                                 _handleLongPress(date);
                               },
                               child: SizedBox(
                                 width: cellSize,
                                 height: cellSize,
-                                child: _buildHeatmapCellManual(cellIndex, days, weekStartsOnSunday: weekStartsOnSunday),
+                                child: _buildHeatmapCellManual(
+                                  cellIndex,
+                                  days,
+                                  weekStartsOnSunday: weekStartsOnSunday,
+                                ),
                               ),
                             ),
                           );
@@ -801,17 +872,53 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }
 
   Widget _buildYearlyHeatmapCell(int index, int totalDays) {
-    if (index >= totalDays) {
-      return const SizedBox();
+    final now = DateTime.now();
+    final startOfYear = DateTime(now.year, 1, 1);
+
+    // Get start of week preference
+    final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
+    final weekStartsOnSunday = startOfWeek == 'Sun';
+
+    // Calculate which date this grid cell represents
+    // Grid is column-major: index = col * 7 + row
+    final row = index % 7;
+    final col = index ~/ 7;
+
+    // Find the Monday (or Sunday) of the week containing Jan 1
+    final startWeekday = startOfYear.weekday; // 1=Mon, 7=Sun
+    int daysToSubtract;
+
+    if (weekStartsOnSunday) {
+      // Adjust to Sunday start (0=Sun, 1=Mon...6=Sat)
+      daysToSubtract = startWeekday == 7 ? 0 : startWeekday;
+    } else {
+      // Monday start
+      daysToSubtract = startWeekday - 1; // Days to go back to Monday
     }
 
-    final now = DateTime.now();
-    final daysBack = totalDays - 1 - index;
-    final date = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: daysBack));
+    final firstCellDate = startOfYear.subtract(Duration(days: daysToSubtract));
+    final date = firstCellDate.add(Duration(days: col * 7 + row));
+
+    // Check if date is outside the year range
+    if (date.year != now.year) {
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(0),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      );
+    }
+
+    // Show future dates with zero intensity color
+    if (date.isAfter(now)) {
+      return Container(
+        decoration: BoxDecoration(
+          color: _getColorForIntensity(0),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      );
+    }
+
     final intensity = _calculateIntensityForDate(date);
 
     final dateOnly = DateTime(date.year, date.month, date.day);
@@ -838,35 +945,50 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       case 'Year':
         return 365;
       default:
-        return 90;
+        // Quarter: calculate days in current quarter
+        final now = DateTime.now();
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        final endMonth = quarter * 3;
+        int totalDays = 0;
+        for (int month = startMonth; month <= endMonth; month++) {
+          totalDays += DateTime(now.year, month + 1, 0).day;
+        }
+        return totalDays;
     }
   }
 
   Widget _buildDayLabels() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = isDark ? AppColors.textSecondary : const Color(0xFF94A3B8);
-    
+    final labelColor = isDark
+        ? AppColors.textSecondary
+        : const Color(0xFF94A3B8);
+
     // Get start of week preference
     final startOfWeek = ref.watch(settingsProvider)['startOfWeek'] as String;
     final weekStartsOnSunday = startOfWeek == 'Sun';
-    
+
     // Labels for Sunday start: Sun, Tue, Thu, Sat
     // Labels for Monday start: Mon, Wed, Fri, Sun
     final labels = weekStartsOnSunday
         ? ['Sun', 'Tue', 'Thu', 'Sat']
         : ['Mon', 'Wed', 'Fri', 'Sun'];
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: labels.map((label) => Text(
-        label,
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: labelColor,
-        ),
-      )).toList(),
+      children: labels
+          .map(
+            (label) => Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: labelColor,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -878,54 +1000,66 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   }) {
     // For Quarter/Year views, calculate date directly
     if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
-      if (index >= totalDays) {
+      final now = DateTime.now();
+      DateTime startDate;
+
+      if (_selectedTimeframe == 'Quarter') {
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        startDate = DateTime(now.year, startMonth, 1);
+      } else {
+        startDate = DateTime(now.year, 1, 1);
+      }
+
+      // Calculate which date this grid cell represents
+      // Grid is column-major: index = col * 7 + row
+      // Row 0 = Monday (or Sunday if weekStartsOnSunday)
+      final row = index % 7;
+      final col = index ~/ 7;
+
+      // Find the Monday (or Sunday) of the week containing startDate
+      int startWeekday = startDate.weekday; // 1=Mon, 7=Sun
+      int daysToSubtract;
+
+      if (weekStartsOnSunday) {
+        // Adjust to Sunday start (0=Sun, 1=Mon...6=Sat)
+        daysToSubtract = startWeekday == 7 ? 0 : startWeekday;
+      } else {
+        // Monday start
+        daysToSubtract = startWeekday - 1; // 0=Mon, 1=Tue...6=Sun
+      }
+
+      final firstCellDate = startDate.subtract(Duration(days: daysToSubtract));
+      final date = firstCellDate.add(Duration(days: col * 7 + row));
+
+      // Check if this date is outside the period range
+      final periodEnd = _selectedTimeframe == 'Year'
+          ? DateTime(now.year, 12, 31)
+          : DateTime(
+              now.year,
+              ((((now.month - 1) ~/ 3) + 1) * 3),
+              DateTime(now.year, ((((now.month - 1) ~/ 3) + 1) * 3) + 1, 0).day,
+            );
+
+      if (date.isBefore(startDate) || date.isAfter(periodEnd)) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: _getColorForIntensity(0),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
           ),
         );
       }
 
-      final now = DateTime.now();
-      final daysBack = totalDays - 1 - index;
-      
-      // Adjust for week start preference
-      int adjustedDaysBack = daysBack;
-      if (weekStartsOnSunday) {
-        // When week starts on Sunday, we need to shift the alignment
-        // Get today's weekday (1 = Mon, 7 = Sun)
-        final todayWeekday = now.weekday;
-        // Adjust so Sunday (7) becomes 0
-        final todayOffset = todayWeekday == 7 ? 0 : todayWeekday;
-        
-        // The grid index represents position in grid (row 0 = Sunday in Sun-start mode)
-        // We need to align the dates properly
-        final gridRow = index % 7;
-        final gridCol = index ~/ 7;
-        
-        // Calculate the actual date based on grid position
-        // In Sunday-start mode: row 0 = Sunday, 1 = Monday, etc.
-        // Find which day of week today is in Sunday-start (0-6, where 0 = Sunday)
-        final targetDayOfWeek = gridRow; // 0 = Sun, 1 = Mon, etc.
-        
-        // Calculate how many days back from today
-        final weeksBack = (totalDays - 1 - index) ~/ 7;
-        final dayInWeek = gridRow;
-        
-        // Today's position in Sunday-start week (0-6)
-        final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday;
-        
-        // Calculate days back
-        adjustedDaysBack = weeksBack * 7 + (todayPosInWeek - dayInWeek);
+      // Show future dates with zero intensity color
+      if (date.isAfter(now)) {
+        return Container(
+          decoration: BoxDecoration(
+            color: _getColorForIntensity(0),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
       }
-      
-      final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).subtract(Duration(days: adjustedDaysBack));
+
       final intensity = _calculateIntensityForDate(date);
 
       final dateOnly = DateTime(date.year, date.month, date.day);
@@ -946,7 +1080,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     // Original logic for other views
     final intensity =
         overrideIntensity ??
-        (index >= totalDays ? -1 : _getCellIntensity(index, totalDays, weekStartsOnSunday));
+        (index >= totalDays
+            ? -1
+            : _getCellIntensity(index, totalDays, weekStartsOnSunday));
 
     return Container(
       decoration: BoxDecoration(
@@ -996,15 +1132,17 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     switch (_selectedTimeframe) {
       case 'Week':
         daysToSubtract = 6 - index; // 0 = 6 days ago, 6 = today
-        
+
         // Adjust for Sunday week start
         if (weekStartsOnSunday) {
           // In Sunday-start mode, we need to shift the week alignment
           // row 0 should be Sunday, row 6 should be Saturday
           final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
-          final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday; // Convert to 0 = Sun, 1 = Mon, etc.
+          final todayPosInWeek = todayWeekday == 7
+              ? 0
+              : todayWeekday; // Convert to 0 = Sun, 1 = Mon, etc.
           final targetDayOfWeek = index; // 0-6 where 0 = Sunday in our grid
-          
+
           daysToSubtract = (todayPosInWeek - targetDayOfWeek + 7) % 7;
         }
         break;
@@ -1190,7 +1328,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final available = math.max(0.0, constraints.maxWidth - 48); // Equal outer margins
+          final available = math.max(
+            0.0,
+            constraints.maxWidth - 48,
+          ); // Equal outer margins
           final groupWidth = math.min(targetGroupWidth, available);
           final cardWidth = (groupWidth - gap * 2) / 3;
 
@@ -1222,43 +1363,43 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                streakDays.toString(),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  height: 1,
-                ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              streakDays.toString(),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                height: 1,
               ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: const Color(0xFFEA580C),
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Current Streak',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-              letterSpacing: 0.2,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Icon(
+                Icons.local_fire_department,
+                color: const Color(0xFFEA580C),
+                size: 22,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Current Streak',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+            letterSpacing: 0.2,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }
@@ -1308,43 +1449,43 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${consistency.toStringAsFixed(0)}%',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  height: 1,
-                ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${consistency.toStringAsFixed(0)}%',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                height: 1,
               ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Icon(
-                  Icons.donut_large,
-                  color: const Color(0xFF3B82F6),
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Consistency',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-              letterSpacing: 0.2,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Icon(
+                Icons.donut_large,
+                color: const Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Consistency',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+            letterSpacing: 0.2,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }
@@ -1392,43 +1533,43 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                perfectDays.toString(),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
-                  height: 1,
-                ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              perfectDays.toString(),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.textPrimary : const Color(0xFF0F172A),
+                height: 1,
               ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Icon(
-                  Icons.verified,
-                  color: const Color(0xFF3f6a4a),
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Perfect Days',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
-              letterSpacing: 0.2,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Icon(
+                Icons.verified,
+                color: const Color(0xFF3f6a4a),
+                size: 22,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Perfect Days',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.textSecondary : const Color(0xFF64748B),
+            letterSpacing: 0.2,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }
@@ -1483,35 +1624,44 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
     return perfectCount;
   }
 
-  DateTime _getDateForCellIndex(int index, int totalDays, [bool weekStartsOnSunday = false]) {
+  DateTime _getDateForCellIndex(
+    int index,
+    int totalDays, [
+    bool weekStartsOnSunday = false,
+  ]) {
     if (_selectedTimeframe == 'Quarter' || _selectedTimeframe == 'Year') {
       final now = DateTime.now();
-      final daysBack = totalDays - 1 - index;
-      
-      if (weekStartsOnSunday) {
-        // Get grid position
-        final gridRow = index % 7; // 0-6
-        final gridCol = index ~/ 7; // week number
-        
-        // Today's weekday (1 = Mon, 7 = Sun) -> convert to (0 = Sun, 1 = Mon, etc.)
-        final todayWeekday = now.weekday;
-        final todayPosInWeek = todayWeekday == 7 ? 0 : todayWeekday;
-        
-        // Calculate weeks back from the grid column
-        final totalWeeks = (totalDays / 7).ceil();
-        final weeksBack = totalWeeks - 1 - gridCol;
-        
-        // Calculate the day offset within the week
-        // gridRow 0 = Sunday, 1 = Monday, etc.
-        final dayInWeek = gridRow;
-        
-        // Calculate total days back
-        final adjustedDaysBack = weeksBack * 7 + (todayPosInWeek - dayInWeek);
-        
-        return DateTime(now.year, now.month, now.day).subtract(Duration(days: adjustedDaysBack));
+      DateTime startDate;
+
+      if (_selectedTimeframe == 'Quarter') {
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        startDate = DateTime(now.year, startMonth, 1);
+      } else {
+        startDate = DateTime(now.year, 1, 1);
       }
-      
-      return DateTime(now.year, now.month, now.day).subtract(Duration(days: daysBack));
+
+      // Calculate which date this grid cell represents
+      // Grid is column-major: index = col * 7 + row
+      final row = index % 7;
+      final col = index ~/ 7;
+
+      // Find the Monday (or Sunday) of the week containing startDate
+      int startWeekday = startDate.weekday; // 1=Mon, 7=Sun
+      int daysToSubtract;
+
+      if (weekStartsOnSunday) {
+        // Adjust to Sunday start (0=Sun, 1=Mon...6=Sat)
+        daysToSubtract = startWeekday == 7 ? 0 : startWeekday;
+      } else {
+        // Monday start
+        daysToSubtract = startWeekday - 1; // 0=Mon, 1=Tue...6=Sun
+      }
+
+      final firstCellDate = startDate.subtract(Duration(days: daysToSubtract));
+      final date = firstCellDate.add(Duration(days: col * 7 + row));
+
+      return date;
     }
     return _getDateForIndex(index, weekStartsOnSunday);
   }
@@ -1541,8 +1691,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   void _showPastDateLoggingSheet(DateTime date) {
     final dateKey = _formatDateKey(date);
-    final habits = ref.read(habitListProvider.notifier).getHabitsForDate(dateKey);
-    
+    final habits = ref
+        .read(habitListProvider.notifier)
+        .getHabitsForDate(dateKey);
+
     // Local state for the sheet
     final habitStates = Map<String, bool>.fromEntries(
       habits.map((h) => MapEntry(h.id, h.completed)),
@@ -1585,7 +1737,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       'No habits to log for this date',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
-                        color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   )
@@ -1608,7 +1762,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                             border: Border.all(
                               color: isCompleted
                                   ? const Color(0xFF3f6a4a).withOpacity(0.3)
-                                  : (isDark ? AppColors.darkDivider : const Color(0xFFF1F3F2)),
+                                  : (isDark
+                                        ? AppColors.darkDivider
+                                        : const Color(0xFFF1F3F2)),
                             ),
                           ),
                           child: Row(
@@ -1619,17 +1775,23 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                                 decoration: BoxDecoration(
                                   color: isCompleted
                                       ? const Color(0xFF3f6a4a).withOpacity(0.1)
-                                      : (isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA)),
+                                      : (isDark
+                                            ? AppColors.darkBackground
+                                            : const Color(0xFFF8F9FA)),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   habit.iconCodePoint != null
-                                      ? IconData(habit.iconCodePoint!,
-                                          fontFamily: 'MaterialIcons')
+                                      ? IconData(
+                                          habit.iconCodePoint!,
+                                          fontFamily: 'MaterialIcons',
+                                        )
                                       : Icons.check_circle_outline,
                                   color: isCompleted
                                       ? const Color(0xFF3f6a4a)
-                                      : (isDark ? AppColors.textMuted : const Color(0xFF9CA3AF)),
+                                      : (isDark
+                                            ? AppColors.textMuted
+                                            : const Color(0xFF9CA3AF)),
                                   size: 28,
                                 ),
                               ),
@@ -1640,7 +1802,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: isDark ? AppColors.textPrimary : const Color(0xFF1F2937),
+                                    color: isDark
+                                        ? AppColors.textPrimary
+                                        : const Color(0xFF1F2937),
                                   ),
                                 ),
                               ),
@@ -1655,7 +1819,11 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                                   border: isCompleted
                                       ? null
                                       : Border.all(
-                                          color: isDark ? AppColors.darkDivider : const Color(0xFFE5E7EB), width: 2),
+                                          color: isDark
+                                              ? AppColors.darkDivider
+                                              : const Color(0xFFE5E7EB),
+                                          width: 2,
+                                        ),
                                 ),
                                 child: isCompleted
                                     ? const Icon(
@@ -1682,7 +1850,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                     ),
@@ -1691,22 +1861,22 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                       onPressed: () {
                         // Save all changes
                         for (final habit in habits) {
-                          final shouldBeCompleted = habitStates[habit.id] ?? false;
+                          final shouldBeCompleted =
+                              habitStates[habit.id] ?? false;
                           final currentlyCompleted = habit.completed;
-                          
+
                           if (shouldBeCompleted != currentlyCompleted) {
-                            ref.read(habitListProvider.notifier).toggleForDate(
-                              habit.id,
-                              dateKey,
-                            );
+                            ref
+                                .read(habitListProvider.notifier)
+                                .toggleForDate(habit.id, dateKey);
                           }
                         }
-                        
+
                         // Refresh heatmap
                         setState(() {
                           _intensityCache = {};
                         });
-                        
+
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
@@ -1741,8 +1911,18 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
   String _formatDisplayDate(DateTime date) {
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }

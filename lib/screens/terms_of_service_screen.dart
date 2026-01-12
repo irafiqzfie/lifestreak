@@ -48,14 +48,14 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _buildSection('Use of the App', [
-                      _buildBulletList([
+                    _buildSection(context, 'Use of the App', [
+                      _buildBulletList(context, [
                         'Lifestreak is a personal habit-tracking app.',
                         'You agree to use it only for lawful purposes.',
                       ]),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Accounts', [
+                    _buildSection(context, 'Accounts', [
                       Text(
                         'You are responsible for activity under your account.',
                         style: GoogleFonts.plusJakartaSans(
@@ -66,14 +66,14 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Your Data', [
-                      _buildBulletList([
+                    _buildSection(context, 'Your Data', [
+                      _buildBulletList(context, [
                         'You retain ownership of your data.',
                         'We process it only to provide app functionality, as described in the Privacy Policy.',
                       ]),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Social Features', [
+                    _buildSection(context, 'Social Features', [
                       Text(
                         'If you add friends:',
                         style: GoogleFonts.plusJakartaSans(
@@ -83,21 +83,21 @@ class TermsOfServiceScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _buildBulletList([
+                      _buildBulletList(context, [
                         'Only aggregated progress is shared',
                         'No habit names or detailed logs are visible',
                         'You may remove friends at any time',
                       ]),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Account Deletion', [
-                      _buildBulletList([
+                    _buildSection(context, 'Account Deletion', [
+                      _buildBulletList(context, [
                         'You may delete your account at any time.',
                         'Deletion permanently removes your data.',
                       ]),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Disclaimer', [
+                    _buildSection(context, 'Disclaimer', [
                       Text(
                         'Lifestreak does not provide medical or health advice.',
                         style: GoogleFonts.plusJakartaSans(
@@ -108,7 +108,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildSection('Contact', [
+                    _buildSection(context, 'Contact', [
                       Text(
                         'Support:',
                         style: GoogleFonts.plusJakartaSans(
@@ -119,7 +119,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'support@lifestreaks.my',
+                        'support@lifestreak.my',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
                           color: const Color(0xFF3f6a4a),
@@ -179,7 +179,7 @@ class TermsOfServiceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> content) {
+  Widget _buildSection(BuildContext context, String title, List<Widget> content) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +198,7 @@ class TermsOfServiceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBulletList(List<String> items) {
+  Widget _buildBulletList(BuildContext context, List<String> items) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
