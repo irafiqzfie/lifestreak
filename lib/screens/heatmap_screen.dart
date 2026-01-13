@@ -266,7 +266,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
     switch (_selectedTimeframe) {
       case 'Week':
-        start = now.subtract(const Duration(days: 7));
+        start = now.subtract(const Duration(days: 6));
         break;
       case 'Month':
         const months = [
@@ -412,9 +412,11 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
               final isDark = Theme.of(context).brightness == Brightness.dark;
               return GestureDetector(
-                onLongPress: () {
-                  _handleLongPress(date);
-                },
+                onLongPress: _selectedTimeframe == 'Month'
+                    ? () {
+                        _handleLongPress(date);
+                      }
+                    : null,
                 child: Container(
                   decoration: BoxDecoration(
                     color: _getColorForIntensity(intensity),
@@ -503,9 +505,11 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                     right: index == 6 ? 0 : 6,
                   ),
                   child: GestureDetector(
-                    onLongPress: () {
-                      _handleLongPress(date);
-                    },
+                    onLongPress: _selectedTimeframe == 'Week'
+                        ? () {
+                            _handleLongPress(date);
+                          }
+                        : null,
                     child: Column(
                       children: [
                         Text(
@@ -727,14 +731,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                           return Padding(
                             padding: EdgeInsets.only(left: col == 0 ? 0 : gap),
                             child: GestureDetector(
-                              onLongPress: () {
-                                final date = _getDateForCellIndex(
-                                  cellIndex,
-                                  days,
-                                  weekStartsOnSunday,
-                                );
-                                _handleLongPress(date);
-                              },
+                              onLongPress: null, // Disabled for Quarter/Year views
                               child: SizedBox(
                                 width: cellSize,
                                 height: cellSize,
@@ -1113,15 +1110,23 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
       return -2; // Today
     }
 
-    // Check cache
+    // Check cache (but not for today - always recalculate today)
     final dateKey = _formatDateKey(date);
-    if (_intensityCache.containsKey(dateKey)) {
+    final now = DateTime.now();
+    final isToday = dateOnly.isAtSameMomentAs(todayOnly);
+    
+    if (!isToday && _intensityCache.containsKey(dateKey)) {
       return _intensityCache[dateKey]!;
     }
 
     // Calculate intensity from real data
     final intensity = _calculateIntensityForDate(date);
-    _intensityCache[dateKey] = intensity;
+    
+    // Only cache past days, not today
+    if (!isToday) {
+      _intensityCache[dateKey] = intensity;
+    }
+    
     return intensity;
   }
 
@@ -1170,17 +1175,32 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   double _calculateIntensityForDate(DateTime date) {
     if (_prefs == null) return 0.0;
 
-    final habits = ref.read(habitListProvider);
+    final habits = ref.watch(habitListProvider);
     if (habits.isEmpty) return 0.0;
 
     final dateKey = _formatDateKey(date);
+    final now = DateTime.now();
+    
+    // Check if this is today
+    final isToday = date.year == now.year && 
+                    date.month == now.month && 
+                    date.day == now.day;
+    
     int completedCount = 0;
 
     // Count completed habits for this date
     for (final habit in habits) {
-      final logKey = 'habit_log_${habit.id}_$dateKey';
-      if (_prefs!.getBool(logKey) == true) {
-        completedCount++;
+      if (isToday) {
+        // For today, use in-memory completion status
+        if (habit.completed) {
+          completedCount++;
+        }
+      } else {
+        // For past days, check SharedPreferences
+        final logKey = 'habit_log_${habit.id}_$dateKey';
+        if (_prefs!.getBool(logKey) == true) {
+          completedCount++;
+        }
       }
     }
 
@@ -1198,7 +1218,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   ({int score, int maxScore}) _calculateAggregatedScore() {
     if (_prefs == null) return (score: 0, maxScore: 0);
 
-    final habits = ref.read(habitListProvider);
+    final habits = ref.watch(habitListProvider);
     final now = DateTime.now();
     final List<int> dailyScores = [];
 
@@ -1219,8 +1239,12 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
         startDate = DateTime(now.year, 1, 1);
         break;
       default: // Quarter
-        days = 90;
-        startDate = now.subtract(const Duration(days: 89));
+        final quarter = ((now.month - 1) ~/ 3) + 1;
+        final startMonth = (quarter - 1) * 3 + 1;
+        final endMonth = quarter * 3;
+        startDate = DateTime(now.year, startMonth, 1);
+        final endDate = DateTime(now.year, endMonth + 1, 0);
+        days = endDate.difference(startDate).inDays + 1;
     }
 
     // Calculate daily scores for the range
@@ -1232,11 +1256,24 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
 
       final dateKey = _formatDateKey(date);
       int completedCount = 0;
+      
+      // Check if this is today
+      final isToday = date.year == now.year && 
+                      date.month == now.month && 
+                      date.day == now.day;
 
       for (final habit in habits) {
-        final logKey = 'habit_log_${habit.id}_$dateKey';
-        if (_prefs!.getBool(logKey) == true) {
-          completedCount++;
+        if (isToday) {
+          // For today, use in-memory completion status
+          if (habit.completed) {
+            completedCount++;
+          }
+        } else {
+          // For past days, check SharedPreferences
+          final logKey = 'habit_log_${habit.id}_$dateKey';
+          if (_prefs!.getBool(logKey) == true) {
+            completedCount++;
+          }
         }
       }
 
@@ -1407,7 +1444,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   int _calculateCurrentStreak() {
     if (_prefs == null) return 0;
 
-    final habits = ref.read(habitListProvider);
+    final habits = ref.watch(habitListProvider);
     if (habits.isEmpty) return 0;
 
     final today = DateTime.now();
@@ -1493,7 +1530,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   double _calculateConsistency() {
     if (_prefs == null) return 0.0;
 
-    final habits = ref.read(habitListProvider);
+    final habits = ref.watch(habitListProvider);
     if (habits.isEmpty) return 0.0;
 
     final today = DateTime.now();
@@ -1577,7 +1614,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
   int _calculatePerfectDays() {
     if (_prefs == null) return 0;
 
-    final habits = ref.read(habitListProvider);
+    final habits = ref.watch(habitListProvider);
     if (habits.isEmpty) return 0;
 
     final today = DateTime.now();

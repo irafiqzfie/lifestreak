@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../providers/habit_provider.dart';
 import '../providers/sync_provider.dart';
@@ -24,14 +25,62 @@ class HabitLoggerScreen extends ConsumerStatefulWidget {
 
 class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
   bool _isEditMode = false;
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
     super.initState();
+    _loadPrefs();
     // Register the callback with the parent
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterAddCallback?.call(showCreateHabitSheet);
     });
+  }
+
+  Future<void> _loadPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  int _calculateHabitStreak(Habit habit) {
+    if (_prefs == null) return 0;
+
+    final today = DateTime.now();
+    int streak = 0;
+
+    // Check backwards from today
+    for (int i = 0; i < 365; i++) {
+      final checkDate = DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ).subtract(Duration(days: i));
+      final dateKey = _formatDateKey(checkDate);
+      final logKey = 'habit_log_${habit.id}_$dateKey';
+      
+      bool isCompleted;
+      if (i == 0) {
+        // For today, use the in-memory completion status
+        isCompleted = habit.completed;
+      } else {
+        // For past days, check SharedPreferences
+        isCompleted = _prefs!.getBool(logKey) == true;
+      }
+      
+      if (isCompleted) {
+        streak++;
+      } else {
+        break; // Streak broken
+      }
+    }
+
+    return streak;
+  }
+
+  String _formatDateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   void showCreateHabitSheet() {
@@ -435,12 +484,42 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
     );
   }
 
+  List<bool> _calculateStreakPattern(Habit habit) {
+    if (_prefs == null) return List.generate(5, (_) => false);
+
+    final today = DateTime.now();
+    final pattern = <bool>[];
+
+    // Get last 5 days (today and 4 days back)
+    for (int i = 4; i >= 0; i--) {
+      final checkDate = DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ).subtract(Duration(days: i));
+      final dateKey = _formatDateKey(checkDate);
+      final logKey = 'habit_log_${habit.id}_$dateKey';
+      
+      bool isCompleted;
+      if (i == 0) {
+        // For today, use the in-memory completion status
+        isCompleted = habit.completed;
+      } else {
+        // For past days, check SharedPreferences
+        isCompleted = _prefs!.getBool(logKey) == true;
+      }
+      
+      pattern.add(isCompleted);
+    }
+
+    return pattern;
+  }
+
   Widget _buildHabitCard(Habit habit, {bool isEditMode = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = habit.completed;
-    final hash = habit.name.hashCode.abs();
-    final streakPattern = List.generate(5, (i) => (hash >> i) & 1 == 1);
-    final streakDays = isCompleted ? (hash % 15) + 1 : 0;
+    final streakPattern = _calculateStreakPattern(habit);
+    final streakDays = _calculateHabitStreak(habit);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -684,7 +763,9 @@ class _HabitLoggerScreenState extends ConsumerState<HabitLoggerScreen> {
                 ),
           ] else
             GestureDetector(
-                  onTap: () => ref.read(habitListProvider.notifier).toggle(habit.id),
+                  onTap: () {
+                    ref.read(habitListProvider.notifier).toggle(habit.id);
+                  },
                   child: Container(
                     width: 32,
                     height: 32,
